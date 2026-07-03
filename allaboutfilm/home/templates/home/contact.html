@@ -1,0 +1,103 @@
+{% extends "home/base.html" %}
+
+{% block content %}
+    <div class="container-fluid">
+        <div class="contact__wrapper mt-n9">
+            <div class="row">
+                <!-- Contact Form column -->
+                <div id="contact_form" class="col-lg-7 contact-form__wrapper order-lg-1">
+                    <h3 class="pt-4">Get in Touch</h3>
+                    <h5 class="contact_form_desc pt-2" lang="en">Are you are interested in trading gear with us?
+                        <br> Do you have a question about the process?
+                        <br> Then feel free to shoot us up a message by filling the form below and we will try to get back to you the soonest!</h5>
+                    <form id="contact" action="#" class="contact-form py-4" method="post">
+                        <div class="row">
+                            <div class="col-sm-6 mb-3">
+                                <div class="form-group">
+                                    <label class="required-field" for="firstName">First Name</label>
+                                    <input type="text" class="form-control" id="firstName" name="firstName" placeholder="Jimi">
+                                </div>
+                            </div>
+
+                            <div class="col-sm-6 mb-3">
+                                <div class="form-group">
+                                    <label for="lastName">Last Name</label>
+                                    <input type="text" class="form-control" id="lastName" name="lastName" placeholder="Hendrix">
+                                </div>
+                            </div>
+
+                            <div class="col-sm-12 mb-3">
+                                <div class="form-group">
+                                    <label class="required-field" for="email">Email</label>
+                                    <input type="text" class="form-control" id="email" name="email" placeholder="jimihendrix@example.com">
+                                </div>
+                            </div>
+
+                            <div class="col-sm-12 mb-3">
+                                <div class="form-group">
+                                    <label class="required-field" for="subject">Subject</label>
+                                    <input type="text" class="form-control" id="subject" name="subject" placeholder="Please enter the subject of your message">
+                                </div>
+                            </div>
+
+                            <div class="col-sm-12 mb-3">
+                                <div class="form-group">
+                                    <label class="required-field" for="message">Message</label>
+                                    <textarea class="form-control" id="message" name="message" rows="4" placeholder="300 characters max"></textarea>
+                                </div>
+                            </div>
+
+                            <div id="submit" class="col-sm-12 mb-3">
+                                <button type="submit" name="submit" class="btn btn-primary" aria-label="Submit">Submit</button>
+                            </div>
+
+                        </div>
+                    </form>
+                </div>
+                <!-- Contact info column -->
+                <div id="contact_info" class="col-lg-5 contact-info__wrapper p-5 order-lg-2">
+                    <h3 class="mb-4 text-white">Contact Info</h3>
+                    <ul class="contact-info__list list-style--none position-relative z-index-101">
+                        <li class="mb-4 pl-4">
+                            <span class="position-absolute"><i class="fas fa-envelope"></i></span> info@nge.com
+                        </li>
+                        <li class="mb-4 pl-4">
+                            <span class="position-absolute"><i class="fas fa-phone"></i></span> +30 210 6767 676
+                        </li>
+                        <li class="mb-4 pl-4">
+                        <span class="position-absolute">
+                            <i class="fab fa-facebook"></i>
+                        </span> <a href="https://www.facebook.com/ericclapton" class="text-white" aria-label="Facebook" target="_blank">Visit Our Facebook</a>
+                        </li>
+                        <li class="mb-4 pl-4">
+                        <span class="position-absolute">
+                            <i class="fab fa-youtube"></i>
+                        </span> <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" class="text-white" aria-label="YouTube" target="_blank">Visit Our YouTube</a>
+                        </li>
+                        <li class="mb-4 pl-4">
+                        <span class="position-absolute">
+                            <img src="images/reverb.ico" alt="Reverb" width="16" height="16">
+                        </span> <a href="https://reverb.com/shop/example-shop" class="text-white" aria-label="Reverb" target="_blank">Visit Our Reverb</a>
+                        </li>
+                        <li class="mb-4 pl-4">
+                            <span class="position-absolute"><i class="fas fa-map-marker-alt"></i></span> <strong>Nick's Guitar Emporium</strong>
+                            <br> Iroon Polytechneiou 3
+                            <br> Elefsina, Attiki 19200
+                        </li>
+                        <li class="mb-4 pl-4">
+                            <span class="position-absolute"><i class="fas fa-clock"></i></span>Mon-Fri: 10:00 a.m. to 8:00 p.m.
+                            <br> Sat: 10:00 a.m. to 3:00 p.m.
+                            </p>
+                        </li>
+                    </ul>
+
+                    <div class="mapouter">
+                        <div class="gmap_canvas rounded"><iframe class="gmap_iframe" width="100%" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="https://maps.google.com/maps?width=548&amp;height=496&amp;hl=en&amp;q=Iroon Polytechneiou 3, elefsina&amp;t=&amp;z=15&amp;ie=UTF8&amp;iwloc=B&amp;output=embed"></iframe><a href="https://sprunkin.com/">Sprunki Game</a></div><style>.mapouter{position:relative;text-align:right;width:100%;height:496px;}.gmap_canvas {overflow:hidden;background:none!important;width:100%;height:496px;}.gmap_iframe {height:496px!important;}</style>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+{% endblock %}
