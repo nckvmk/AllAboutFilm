@@ -20,6 +20,8 @@ html, body {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    background: var(--base-color);
+    color: var(--text-color);
 }
 
 main {
@@ -95,13 +97,13 @@ a {
     transition: color 0.3s ease;
 }
 
-.nav-item:hover {
+.nav-link {
     color: var(--text-color);
+    transition: color 0.3s ease;
 }
 
-.nav-link.active {
-    color: var(--text-color) !important;
-    font-weight: bold;
+.nav-link:hover {
+    color: var(--text-color);
 }
 
 #theme-switch {
