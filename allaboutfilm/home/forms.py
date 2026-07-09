@@ -20,19 +20,19 @@ class ContactForm(forms.Form):
         min_length=2,
         max_length=50,
         validators=[name_validator],
-        widget=forms.TextInput(attrs={"placeholder": "Jimi"}),
+        widget=forms.TextInput(attrs={"placeholder": "Joe"}),
     )
     last_name = forms.CharField(
         label="Last Name",
         min_length=2,
         max_length=50,
         validators=[name_validator],
-        widget=forms.TextInput(attrs={"placeholder": "Hendrix"}),
+        widget=forms.TextInput(attrs={"placeholder": "Mama"}),
     )
     email = forms.EmailField(
         label="Email",
         max_length=50,
-        widget=forms.EmailInput(attrs={"placeholder": "jimihendrix@example.com"}),
+        widget=forms.EmailInput(attrs={"placeholder": "joemama@example.com"}),
     )
     subject = forms.CharField(
         label="Subject",
