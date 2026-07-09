@@ -12,3 +12,9 @@ def about(request):
 
 def contact(request):
     return render(request, 'home/contact.html')
+
+def account(request):
+    return render(request, 'home/account.html')
+
+def cart(request):
+    return render(request, 'home/cart.html')
