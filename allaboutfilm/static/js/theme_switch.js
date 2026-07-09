@@ -6,7 +6,7 @@
 
     function updateTheme() {
         const isDark = localStorage.getItem('dark-mode') === 'active';
-        document.body.classList.toggle('dark-mode', isDark);
+        document.documentElement.classList.toggle('dark-mode', isDark);
         const btn = document.querySelector('#theme-switch');
         if (btn) {
             const color = isDark ? '#ffffff' : '#333333';

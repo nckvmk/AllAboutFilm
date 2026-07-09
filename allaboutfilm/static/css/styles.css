@@ -76,8 +76,14 @@ p {
     font-kerning: normal;
 }
 
-nav {
+nav.navbar {
     background: var(--base-variant);
+    --bs-navbar-color: var(--text-color);
+    --bs-navbar-hover-color: var(--text-color);
+    --bs-navbar-active-color: var(--text-color);
+    --bs-navbar-disabled-color: var(--text-color);
+    --bs-navbar-brand-color: var(--text-color);
+    --bs-navbar-brand-hover-color: var(--text-color);
     position: sticky;
     top: 0;
 }
@@ -118,18 +124,6 @@ a {
     align-items: center;
     top: 20px;
     right: 20px;
-}
-
-#theme-switch svg:last-child {
-    display: none;
-}
-
-.dark-mode #theme-switch svg:first-child {
-    display: none;
-}
-
-.dark-mode #theme-switch svg:last-child {
-    display: block;
 }
 
 .material-symbols-outlined { /*Theme mode icon*/
