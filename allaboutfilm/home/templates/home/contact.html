@@ -1,4 +1,6 @@
 {% extends "home/base.html" %}
+{% load static %}
+{% load crispy_forms_tags %}
 
 {% block content %}
     <div class="container-fluid">
@@ -10,49 +12,7 @@
                     <h5 class="contact_form_desc pt-2" lang="en">Are you are interested in trading gear with us?
                         <br> Do you have a question about the process?
                         <br> Then feel free to shoot us up a message by filling the form below and we will try to get back to you the soonest!</h5>
-                    <form id="contact" action="#" class="contact-form py-4" method="post">
-                        <div class="row">
-                            <div class="col-sm-6 mb-3">
-                                <div class="form-group">
-                                    <label class="required-field" for="firstName">First Name</label>
-                                    <input type="text" class="form-control" id="firstName" name="firstName" placeholder="Jimi">
-                                </div>
-                            </div>
-
-                            <div class="col-sm-6 mb-3">
-                                <div class="form-group">
-                                    <label for="lastName">Last Name</label>
-                                    <input type="text" class="form-control" id="lastName" name="lastName" placeholder="Hendrix">
-                                </div>
-                            </div>
-
-                            <div class="col-sm-12 mb-3">
-                                <div class="form-group">
-                                    <label class="required-field" for="email">Email</label>
-                                    <input type="text" class="form-control" id="email" name="email" placeholder="jimihendrix@example.com">
-                                </div>
-                            </div>
-
-                            <div class="col-sm-12 mb-3">
-                                <div class="form-group">
-                                    <label class="required-field" for="subject">Subject</label>
-                                    <input type="text" class="form-control" id="subject" name="subject" placeholder="Please enter the subject of your message">
-                                </div>
-                            </div>
-
-                            <div class="col-sm-12 mb-3">
-                                <div class="form-group">
-                                    <label class="required-field" for="message">Message</label>
-                                    <textarea class="form-control" id="message" name="message" rows="4" placeholder="300 characters max"></textarea>
-                                </div>
-                            </div>
-
-                            <div id="submit" class="col-sm-12 mb-3">
-                                <button type="submit" name="submit" class="btn btn-primary" aria-label="Submit">Submit</button>
-                            </div>
-
-                        </div>
-                    </form>
+                    {% crispy form %}
                 </div>
                 <!-- Contact info column -->
                 <div id="contact_info" class="col-lg-5 contact-info__wrapper p-5 order-lg-2">
@@ -75,12 +35,7 @@
                         </span> <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" class="text-white" aria-label="YouTube" target="_blank">Visit Our YouTube</a>
                         </li>
                         <li class="mb-4 pl-4">
-                        <span class="position-absolute">
-                            <img src="images/reverb.ico" alt="Reverb" width="16" height="16">
-                        </span> <a href="https://reverb.com/shop/example-shop" class="text-white" aria-label="Reverb" target="_blank">Visit Our Reverb</a>
-                        </li>
-                        <li class="mb-4 pl-4">
-                            <span class="position-absolute"><i class="fas fa-map-marker-alt"></i></span> <strong>Nick's Guitar Emporium</strong>
+                            <span class="position-absolute"><i class="fas fa-map-marker-alt"></i></span> <strong>All About Film</strong>
                             <br> Iroon Polytechneiou 3
                             <br> Elefsina, Attiki 19200
                         </li>
@@ -100,4 +55,14 @@
             </div>
         </div>
     </div>
+
+    {% if submitted %}
+        <!-- Flag read by contact.js to trigger the thank-you alert after a
+             successful Django-side validation. -->
+        <div id="form-success" hidden></div>
+    {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'js/contact.js' %}" defer></script>
 {% endblock %}
