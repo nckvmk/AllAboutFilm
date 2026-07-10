@@ -126,3 +126,14 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
+
+# Media files (user-uploaded content, e.g. product images)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / "media"
+
+# Use our custom user model instead of the default auth.User.
+# Must be set before the very first migration.
+AUTH_USER_MODEL = 'home.User'
+
+# Default primary key type for models that don't define their own.
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
