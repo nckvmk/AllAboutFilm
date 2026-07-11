@@ -1,0 +1,21 @@
+{% extends "home/base.html" %}
+{% load static_extras %}
+
+{% block content %}
+    <h1 class="pt-5">Cameras</h1>
+
+    <div id="product_catalog" class="container pb-5">
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            {% for item in items %}
+                {% include "home/_product_card.html" %}
+            {% empty %}
+                <p class="text-center">No cameras available at the moment.</p>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static_v 'js/toast.js' %}" defer></script>
+    <script src="{% static_v 'js/lightbox.js' %}" defer></script>
+{% endblock %}

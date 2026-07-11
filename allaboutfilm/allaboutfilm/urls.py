@@ -23,7 +23,10 @@ from home import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.home, name='welcome'),
-    path('catalog/', views.catalog, name='catalog'),
+    path('cameras/', views.cameras, name='cameras'),
+    path('lenses/', views.lenses, name='lenses'),
+    path('film/', views.film, name='film'),
+    path('item/<str:code>/', views.item_detail, name='item_detail'),
     path('about/', views.about, name='about'),
     path('contact/', views.contact, name='contact'),
     path('account/', views.account, name='account'),

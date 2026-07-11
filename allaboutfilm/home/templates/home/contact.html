@@ -1,5 +1,5 @@
 {% extends "home/base.html" %}
-{% load static %}
+{% load static_extras %}
 {% load crispy_forms_tags %}
 
 {% block content %}
@@ -64,5 +64,5 @@
 {% endblock %}
 
 {% block extra_js %}
-    <script src="{% static 'js/contact.js' %}" defer></script>
+    <script src="{% static_v 'js/contact.js' %}" defer></script>
 {% endblock %}

@@ -374,3 +374,166 @@ footer {
         color: #007bff;
     }
 }
+
+/* ============================================================
+   Product catalog cards
+   ============================================================ */
+.product-card {
+    background-color: var(--base-variant);
+}
+
+/* Override the global fixed-height .card-body used by testimonial cards. */
+.product-card .card-body {
+    height: auto !important;
+}
+
+.product-card-img {
+    position: relative;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    background: var(--base-color);
+    border-top-left-radius: inherit;
+    border-top-right-radius: inherit;
+}
+
+/* Keep card carousels sized to the image box, not the global 500px. */
+.product-card-img .carousel,
+.product-card-img .carousel-inner,
+.product-card-img .carousel-item {
+    height: 100%;
+}
+
+.product-card-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    cursor: zoom-in;
+}
+
+.no-image {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    min-height: 200px;
+    color: var(--text-color);
+    opacity: 0.55;
+}
+
+.product-card .card-text a {
+    color: var(--text-color);
+    text-decoration: underline;
+}
+
+.product-card .price {
+    color: var(--text-color);
+}
+
+/* ============================================================
+   Lightbox (catalog image enlarge)
+   ============================================================ */
+.lightbox-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1080;
+}
+
+.lightbox-overlay.show {
+    display: flex;
+}
+
+.lightbox-img {
+    max-width: 90vw;
+    max-height: 85vh;
+    object-fit: contain;
+    border-radius: 8px;
+}
+
+.lightbox-close {
+    position: absolute;
+    top: 18px;
+    right: 26px;
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 2.6rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+/* ============================================================
+   Item detail page
+   ============================================================ */
+.item-media .carousel-item {
+    height: auto;   /* override the global 500px for the detail carousel */
+}
+
+.zoom-container {
+    position: relative;
+    display: block;
+    width: 100%;
+    cursor: crosshair;
+}
+
+.item-media img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 8px;
+}
+
+.zoom-lens {
+    position: absolute;
+    display: none;
+    width: 160px;
+    height: 160px;
+    border: 2px solid var(--text-color);
+    border-radius: 50%;
+    background-repeat: no-repeat;
+    pointer-events: none;
+    box-shadow: 0 0 14px rgba(0, 0, 0, 0.4);
+}
+
+.item-price {
+    color: var(--text-color);
+    font-weight: bold;
+}
+
+.qty-input {
+    max-width: 90px;
+}
+
+/* ============================================================
+   Add-to-cart toast
+   ============================================================ */
+.cart-toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    max-width: 320px;
+    background: var(--base-variant);
+    color: var(--text-color);
+    border: 1px solid var(--text-color);
+    border-radius: 8px;
+    padding: 12px 18px;
+    box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.25);
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    z-index: 1090;
+}
+
+.cart-toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.cart-toast i {
+    color: #28a745;
+    margin-right: 6px;
+}
