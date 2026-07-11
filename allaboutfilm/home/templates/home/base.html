@@ -8,6 +8,7 @@
     <meta name="keywords" content="Vintage cameras and lenses">
     <meta name="description" content="Website for small trading business of vintage cameras and lenses">
     <meta name="author" content="Nikos Vamvakas">
+    <meta name="csrf-token" content="{{ csrf_token }}">
 
     <title>All About Film</title>
 
@@ -57,8 +58,9 @@
                     <li class="nav-item"><a class="nav-link" href="{% url 'account' %}">My Account</a></li>
                 </ul>
             </div>
-            <a href="{% url 'cart' %}" id="cart-btn" class="nav-icon-btn me-2" aria-label="Shopping cart">
+            <a href="{% url 'cart' %}" id="cart-btn" class="nav-icon-btn me-2 position-relative" aria-label="Shopping cart">
                 <i class="fas fa-cart-shopping"></i>
+                <span class="cart-count {% if not cart_count %}d-none{% endif %}">{{ cart_count }}</span>
             </a>
             <button id="theme-switch" class="nav-icon-btn" aria-label="Theme switch">
                 <!--Dark switch-->

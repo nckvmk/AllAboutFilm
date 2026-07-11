@@ -3,7 +3,7 @@ from django.contrib.auth.admin import UserAdmin
 
 from .models import (
     User, Product, Camera, Lens, Film, ProductImage,
-    Cart, CartItem, Order, OrderItem,
+    Cart, CartItem, Order, OrderItem, ShippingMethod,
 )
 
 
@@ -72,3 +72,9 @@ class OrderAdmin(admin.ModelAdmin):
     list_display = ('id', 'user', 'date', 'total', 'status')
     list_filter = ('status',)
     inlines = [OrderItemInline]
+
+
+@admin.register(ShippingMethod)
+class ShippingMethodAdmin(admin.ModelAdmin):
+    list_display = ('name', 'price', 'position', 'is_active')
+    list_editable = ('price', 'position', 'is_active')

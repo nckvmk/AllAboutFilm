@@ -569,3 +569,119 @@ footer {
     color: #28a745;
     margin-right: 6px;
 }
+
+.cart-toast--error i {
+    color: #dc3545;
+}
+
+/* ============================================================
+   Navbar cart-count badge
+   ============================================================ */
+.cart-count {
+    position: absolute;
+    top: -3px;
+    right: -3px;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 5px;
+    border-radius: 10px;
+    background: #dc3545;
+    color: #fff;
+    font-size: 0.72rem;
+    line-height: 20px;
+    text-align: center;
+    font-weight: bold;
+}
+
+/* ============================================================
+   Cart page
+   ============================================================ */
+.cart-panel,
+.cart-summary {
+    background: var(--base-variant);
+    color: var(--text-color);
+}
+
+/* Bootstrap's .text-muted is a fixed grey that doesn't adapt to the theme,
+   so the item count and category were hard to read in dark mode. Use the
+   theme colour at reduced opacity instead. */
+.cart-panel .text-muted,
+.cart-summary .text-muted {
+    color: var(--text-color) !important;
+    opacity: 0.65;
+}
+
+.cart-thumb img,
+.cart-thumb .no-image {
+    width: 64px;
+    height: 64px;
+    object-fit: cover;
+    border-radius: 6px;
+}
+
+.cart-thumb .no-image {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--base-color);
+    opacity: 0.6;
+}
+
+.cart-item-title,
+.cart-line-total {
+    color: var(--text-color);
+}
+
+.cart-line-total {
+    white-space: nowrap;
+}
+
+.qty-btn {
+    width: 30px;
+    height: 30px;
+    border: 1px solid var(--text-color);
+    background: transparent;
+    color: var(--text-color);
+    border-radius: 6px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.qty-btn:hover {
+    background: var(--text-color);
+    color: var(--base-variant);
+}
+
+.qty-value {
+    min-width: 1.5rem;
+    text-align: center;
+    display: inline-block;
+}
+
+.cart-remove-btn {
+    background: none;
+    border: none;
+    color: var(--text-color);
+    opacity: 0.55;
+    font-size: 1.4rem;
+    line-height: 1;
+    transition: opacity 0.2s ease, color 0.2s ease;
+}
+
+.cart-remove-btn:hover {
+    opacity: 1;
+    color: #dc3545;
+}
+
+@media (max-width: 575.98px) {
+    .cart-row {
+        flex-wrap: wrap;
+        row-gap: 0.5rem;
+    }
+    .cart-row .flex-grow-1 {
+        min-width: calc(100% - 80px);
+    }
+}

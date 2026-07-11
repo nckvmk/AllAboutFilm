@@ -31,6 +31,9 @@ urlpatterns = [
     path('contact/', views.contact, name='contact'),
     path('account/', views.account, name='account'),
     path('cart/', views.cart, name='cart'),
+    path('cart/add/', views.add_to_cart, name='add_to_cart'),
+    path('cart/update/', views.update_cart, name='update_cart'),
+    path('cart/remove/', views.remove_from_cart, name='remove_from_cart'),
 ]
 
 # Serve user-uploaded media files during development.

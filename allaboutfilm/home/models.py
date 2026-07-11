@@ -204,3 +204,19 @@ class OrderItem(models.Model):
 
     def __str__(self):
         return f"{self.quantity} x {self.product_id} in order #{self.order_id}"
+
+
+class ShippingMethod(models.Model):
+    """Shipping options and their rates. Kept in the DB so the cart/summary
+    doesn't hard-code them."""
+
+    name = models.CharField(max_length=100)
+    price = models.DecimalField(max_digits=6, decimal_places=2)
+    position = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['position', 'price']
+
+    def __str__(self):
+        return f"{self.name} (€{self.price})"
