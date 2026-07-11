@@ -7,6 +7,14 @@
     {% if filters %}
     <div class="container">
         <form method="get" class="catalog-filters row g-2 align-items-end pb-4">
+            <div class="col-6 col-sm-4 col-md-3 col-lg">
+                <label class="form-label small mb-1" for="sort-select">Sort by</label>
+                <select class="form-select" id="sort-select" name="sort">
+                    {% for value, label in sort_options %}
+                        <option value="{{ value }}" {% if sort_selected == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
             {% for f in filters %}
                 <div class="col-6 col-sm-4 col-md-3 col-lg">
                     <label class="form-label small mb-1" for="filter-{{ f.name }}">{{ f.label }}</label>
@@ -21,7 +29,7 @@
             <div class="col-12 col-lg-auto d-flex gap-2">
                 <button type="submit" class="btn btn-primary flex-grow-1">Apply Filters</button>
                 {% if has_filters_applied %}
-                    <a href="{{ request.path }}" class="btn btn-outline-secondary">Clear</a>
+                    <a href="{{ request.path }}?sort={{ sort_selected }}" class="btn btn-outline-secondary">Clear</a>
                 {% endif %}
             </div>
         </form>
@@ -48,4 +56,5 @@
 {% block extra_js %}
     <script src="{% static_v 'js/toast.js' %}" defer></script>
     <script src="{% static_v 'js/lightbox.js' %}" defer></script>
+    <script src="{% static_v 'js/catalog.js' %}" defer></script>
 {% endblock %}

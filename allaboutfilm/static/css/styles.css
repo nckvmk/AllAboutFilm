@@ -144,15 +144,21 @@ label {
     color: var(--text-color);
 }
 
-select, #filter_catalog {
+select, .form-select, #filter_catalog {
     background-color: var(--base-variant);
     color: var(--text-color);
     border: 1px solid #ced4da; /* optional, keeps border subtle */
 }
 
-select option {
+select option, .form-select option {
     background-color: var(--base-variant);
     color: var(--text-color);
+}
+
+/* Bootstrap's .form-select ships a dark dropdown arrow; swap it for a light
+   one in dark mode so it stays visible. */
+.dark-mode .form-select {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23e6e6e6' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
 }
 
 .table, .table th, .table td {

@@ -1,5 +1,5 @@
 /* Shopping cart page: quantity +/-, remove, live subtotal / grand total,
- * and the (dummy for now) checkout guard. jQuery + document.querySelector.
+ * and the (dummy for now) checkout guard. jQuery.
  * Relies on window.showToast / window.getCsrfToken / window.updateCartBadge
  * defined in toast.js. */
 

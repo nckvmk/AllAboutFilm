@@ -29,6 +29,17 @@ FILM_PRICE_RANGES = [
 
 FILM_ISO_CHOICES = [6, 25, 50, 100, 125, 160, 200, 320, 400, 800, 1600, 6400]
 
+# Sort options. `None` means "leave the natural order". "Most Recent" uses the
+# code PK descending: codes are zero-padded and per-category (C000, C001, …) so
+# a higher code == newer item.
+SORT_OPTIONS = [
+    ('none', 'No sorting', None),
+    ('recent', 'Most Recent', '-code'),
+    ('price_asc', 'Price: Ascending', 'price'),
+    ('price_desc', 'Price: Descending', '-price'),
+]
+DEFAULT_SORT = 'none'
+
 
 def _render_catalog(request, queryset, page_title, empty_message, filter_specs, price_ranges):
     """Apply the dropdown filters from the query string to `queryset` and render
@@ -64,12 +75,23 @@ def _render_catalog(request, queryset, page_title, empty_message, filter_specs, 
         'selected': price_selected,
     })
 
+    # Sorting (shared across all catalogs).
+    sort_lookup = {key: order_by for key, _, order_by in SORT_OPTIONS}
+    sort_selected = request.GET.get('sort', DEFAULT_SORT)
+    if sort_selected not in sort_lookup:
+        sort_selected = DEFAULT_SORT
+    order_by = sort_lookup[sort_selected]
+    if order_by:
+        queryset = queryset.order_by(order_by)
+
     return render(request, 'home/catalog.html', {
         'items': queryset,
         'page_title': page_title,
         'empty_message': empty_message,
         'filters': filters,
         'has_filters_applied': any(f['selected'] for f in filters),
+        'sort_options': [(key, label) for key, label, _ in SORT_OPTIONS],
+        'sort_selected': sort_selected,
     })
 
 

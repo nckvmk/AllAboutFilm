@@ -1,7 +1,7 @@
 /* Item detail page behaviour:
  *   1. Zoom-on-hover magnifier that enlarges only the area under the cursor.
  *   2. Film quantity selector clamped to available stock.
- * jQuery + document.querySelector only (no getElementById). */
+ * jQuery. */
 
 $(function () {
     var ZOOM = 2.5;

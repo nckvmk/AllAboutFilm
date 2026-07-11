@@ -1,6 +1,6 @@
 /* Catalog image lightbox: click a card image to view an enlarged version,
  * close with the X, a click on the backdrop, or the Escape key.
- * jQuery + document.querySelector only. */
+ * jQuery. */
 
 $(function () {
     var $overlay = $(
