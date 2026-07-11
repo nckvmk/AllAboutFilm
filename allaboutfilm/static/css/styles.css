@@ -411,6 +411,38 @@ footer {
     cursor: zoom-in;
 }
 
+/* Bigger, clearer carousel controls for product cards and the item page.
+   (Scoped so the minimized homepage/About controls are left alone.) */
+.product-card-img .carousel-control-prev,
+.product-card-img .carousel-control-next,
+.item-media .carousel-control-prev,
+.item-media .carousel-control-next {
+    width: 18%;
+    opacity: 1;
+}
+
+.product-card-img .carousel-control-prev-icon,
+.product-card-img .carousel-control-next-icon,
+.item-media .carousel-control-prev-icon,
+.item-media .carousel-control-next-icon {
+    width: 2.75rem;
+    height: 2.75rem;
+    background-color: rgba(0, 0, 0, 0.55);
+    border-radius: 50%;
+    background-size: 45% 45%;
+    background-position: center;
+    background-repeat: no-repeat;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.product-card-img .carousel-control-prev:hover .carousel-control-prev-icon,
+.product-card-img .carousel-control-next:hover .carousel-control-next-icon,
+.item-media .carousel-control-prev:hover .carousel-control-prev-icon,
+.item-media .carousel-control-next:hover .carousel-control-next-icon {
+    background-color: rgba(0, 0, 0, 0.85);
+    transform: scale(1.08);
+}
+
 .no-image {
     display: flex;
     align-items: center;

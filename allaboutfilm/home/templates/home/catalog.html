@@ -2,14 +2,14 @@
 {% load static_extras %}
 
 {% block content %}
-    <h1 class="pt-5">Lenses</h1>
+    <h1 class="pt-5">{{ page_title }}</h1>
 
     <div id="product_catalog" class="container pb-5">
         <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
             {% for item in items %}
                 {% include "home/_product_card.html" %}
             {% empty %}
-                <p class="text-center">No lenses available at the moment.</p>
+                <p class="text-center">{{ empty_message }}</p>
             {% endfor %}
         </div>
     </div>

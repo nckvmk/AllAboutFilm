@@ -8,16 +8,25 @@ def home(request):
     return render(request, 'home/welcome.html')
 
 def cameras(request):
-    items = Camera.objects.prefetch_related('images').all()
-    return render(request, 'home/cameras.html', {'items': items})
+    return render(request, 'home/catalog.html', {
+        'items': Camera.objects.prefetch_related('images').all(),
+        'page_title': 'Cameras',
+        'empty_message': 'No cameras available at the moment.',
+    })
 
 def lenses(request):
-    items = Lens.objects.prefetch_related('images').all()
-    return render(request, 'home/lenses.html', {'items': items})
+    return render(request, 'home/catalog.html', {
+        'items': Lens.objects.prefetch_related('images').all(),
+        'page_title': 'Lenses',
+        'empty_message': 'No lenses available at the moment.',
+    })
 
 def film(request):
-    items = Film.objects.prefetch_related('images').all()
-    return render(request, 'home/film.html', {'items': items})
+    return render(request, 'home/catalog.html', {
+        'items': Film.objects.prefetch_related('images').all(),
+        'page_title': 'Film',
+        'empty_message': 'No film available at the moment.',
+    })
 
 def item_detail(request, code):
     product = get_object_or_404(Product, code=code)
