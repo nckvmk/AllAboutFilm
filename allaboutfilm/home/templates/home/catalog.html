@@ -4,12 +4,42 @@
 {% block content %}
     <h1 class="pt-5">{{ page_title }}</h1>
 
+    {% if filters %}
+    <div class="container">
+        <form method="get" class="catalog-filters row g-2 align-items-end pb-4">
+            {% for f in filters %}
+                <div class="col-6 col-sm-4 col-md-3 col-lg">
+                    <label class="form-label small mb-1" for="filter-{{ f.name }}">{{ f.label }}</label>
+                    <select class="form-select" id="filter-{{ f.name }}" name="{{ f.name }}">
+                        <option value="">{{ f.all_label }}</option>
+                        {% for value, label in f.options %}
+                            <option value="{{ value }}" {% if f.selected == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            {% endfor %}
+            <div class="col-12 col-lg-auto d-flex gap-2">
+                <button type="submit" class="btn btn-primary flex-grow-1">Apply Filters</button>
+                {% if has_filters_applied %}
+                    <a href="{{ request.path }}" class="btn btn-outline-secondary">Clear</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+    {% endif %}
+
     <div id="product_catalog" class="container pb-5">
         <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
             {% for item in items %}
                 {% include "home/_product_card.html" %}
             {% empty %}
-                <p class="text-center">{{ empty_message }}</p>
+                <div class="col-12">
+                    {% if has_filters_applied %}
+                        <p class="text-center py-5">Sorry, no items match your filters. Try adjusting or clearing them.</p>
+                    {% else %}
+                        <p class="text-center py-5">{{ empty_message }}</p>
+                    {% endif %}
+                </div>
             {% endfor %}
         </div>
     </div>
