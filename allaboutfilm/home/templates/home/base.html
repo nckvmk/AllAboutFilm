@@ -58,6 +58,14 @@
                     <li class="nav-item"><a class="nav-link" href="{% url 'account' %}">My Account</a></li>
                 </ul>
             </div>
+            {% if user.is_authenticated %}
+            <form action="{% url 'logout' %}" method="post" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="nav-icon-btn me-2" aria-label="Log out" title="Log out">
+                    <i class="fas fa-power-off"></i>
+                </button>
+            </form>
+            {% endif %}
             <a href="{% url 'cart' %}" id="cart-btn" class="nav-icon-btn me-2 position-relative" aria-label="Shopping cart">
                 <i class="fas fa-cart-shopping"></i>
                 <span class="cart-count {% if not cart_count %}d-none{% endif %}">{{ cart_count }}</span>
@@ -105,6 +113,17 @@
         <p id="footer_contact" class="text-center " lang="en">Tel: +30 210 6767 676  |  E-mail: info@aaf.com</p>
     </div>
 </footer>
+
+<!-- Django messages surfaced as toasts by messages.js -->
+{% if messages %}
+<div id="dj-messages" hidden>
+    {% for message in messages %}
+        <div class="dj-message" data-level="{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+</div>
+{% endif %}
+<script src="{% static_v 'js/messages.js' %}" defer></script>
+<script src="{% static_v 'js/password_reveal.js' %}" defer></script>
 
 <!-- Page-specific scripts -->
 {% block extra_js %}{% endblock %}

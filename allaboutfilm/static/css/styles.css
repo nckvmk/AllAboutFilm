@@ -691,3 +691,55 @@ footer {
         min-width: calc(100% - 80px);
     }
 }
+
+/* ============================================================
+   Auth pages (login / register / password recovery)
+   ============================================================ */
+.auth-card {
+    max-width: 460px;
+    background: var(--base-variant);
+    border-radius: 8px;
+    padding: 2rem;
+    box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.08);
+}
+
+.auth-links a {
+    color: var(--text-color);
+    text-decoration: underline;
+    display: inline-block;
+    margin-top: 0.35rem;
+}
+
+/* Press-and-hold reveal icon inside password fields */
+.pw-reveal-wrap {
+    position: relative;
+}
+
+.pw-reveal-wrap input {
+    padding-right: 2.5rem;
+}
+
+/* Hide Bootstrap's validation icon on password fields so it doesn't collide
+   with the reveal eye; the red border + message still signal the error. */
+.pw-reveal-wrap input.is-invalid,
+.pw-reveal-wrap input.is-valid {
+    background-image: none;
+    padding-right: 2.5rem;
+}
+
+.pw-reveal-btn {
+    position: absolute;
+    top: 0;
+    right: 0;
+    height: 100%;
+    border: none;
+    background: transparent;
+    color: var(--text-color);
+    padding: 0 0.75rem;
+    cursor: pointer;
+    opacity: 0.55;
+}
+
+.pw-reveal-btn:hover {
+    opacity: 1;
+}

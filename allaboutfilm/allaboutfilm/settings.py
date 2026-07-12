@@ -136,5 +136,9 @@ MEDIA_ROOT = BASE_DIR / "media"
 # Must be set before the very first migration.
 AUTH_USER_MODEL = 'home.User'
 
+# Auth flow redirects (the account page doubles as the login page).
+LOGIN_URL = 'account'
+LOGIN_REDIRECT_URL = 'account'
+
 # Default primary key type for models that don't define their own.
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

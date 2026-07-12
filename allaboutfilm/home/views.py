@@ -1,10 +1,15 @@
 from decimal import Decimal
 
-from django.shortcuts import render, get_object_or_404
+from django.contrib import messages
+from django.contrib.auth import authenticate, login, logout, get_user_model
+from django.contrib.auth.models import Group
+from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.http import require_POST
 
-from .forms import ContactForm
+from .forms import (
+    ContactForm, LoginForm, RegistrationForm, PasswordRecoveryForm,
+)
 from .models import Product, Camera, Lens, Film, ShippingMethod, GearCondition
 
 def home(request):
@@ -188,7 +193,86 @@ def contact(request):
     return render(request, 'home/contact.html', {'form': form, 'submitted': submitted})
 
 def account(request):
-    return render(request, 'home/account.html')
+    # Logged in -> show the (placeholder) account page.
+    if request.user.is_authenticated:
+        return render(request, 'home/account.html')
+
+    # Otherwise the account page IS the login page.
+    if request.method == 'POST':
+        form = LoginForm(request.POST)
+        if form.is_valid():
+            identifier = form.cleaned_data['username_or_email']
+            password = form.cleaned_data['password']
+            User = get_user_model()
+            user_obj = (User.objects.filter(username__iexact=identifier).first()
+                        or User.objects.filter(email__iexact=identifier).first())
+            if user_obj is None:
+                form.add_error('username_or_email', 'The username/email provided does not exist in our records.')
+                form.add_error('password', 'The password provided does not exist in our records.')
+            else:
+                user = authenticate(request, username=user_obj.username, password=password)
+                if user is None:
+                    form.add_error('username_or_email', 'The username/email provided is not valid.')
+                    form.add_error('password', 'The password provided is not valid.')
+                elif user.is_superuser:
+                    # The site admin manages everything through the Django admin
+                    # interface, not the storefront login.
+                    form.add_error('username_or_email', 'Administrator accounts must log in through the admin interface.')
+                else:
+                    login(request, user)
+                    # "Remember me" unchecked -> session ends when the browser closes.
+                    if not form.cleaned_data.get('remember_me'):
+                        request.session.set_expiry(0)
+                    return redirect('account')
+    else:
+        form = LoginForm()
+    return render(request, 'home/account.html', {'form': form})
+
+
+def register(request):
+    if request.user.is_authenticated:
+        return redirect('account')
+    if request.method == 'POST':
+        form = RegistrationForm(request.POST)
+        if form.is_valid():
+            User = get_user_model()
+            user = User.objects.create_user(
+                username=form.cleaned_data['username'],
+                email=form.cleaned_data['email'],
+                password=form.cleaned_data['password'],
+                first_name=form.cleaned_data['first_name'],
+                last_name=form.cleaned_data['last_name'],
+            )
+            # New registrants are customers.
+            customer_group = Group.objects.filter(name='Customer').first()
+            if customer_group:
+                user.groups.add(customer_group)
+            messages.success(request, 'Registration successful! You can now log in.')
+            return redirect('account')
+    else:
+        form = RegistrationForm()
+    return render(request, 'home/register.html', {'form': form})
+
+
+def password_recovery(request):
+    if request.method == 'POST':
+        form = PasswordRecoveryForm(request.POST)
+        if form.is_valid():
+            user = form.get_user()
+            user.set_password(form.cleaned_data['new_password'])
+            user.save()
+            messages.success(request, 'Your password has been reset. You can now log in.')
+            return redirect('account')
+    else:
+        form = PasswordRecoveryForm()
+    return render(request, 'home/recover.html', {'form': form})
+
+
+@require_POST
+def logout_view(request):
+    logout(request)
+    messages.success(request, 'You have been logged out.')
+    return redirect('welcome')
 
 
 # ---------------------------------------------------------------------------
