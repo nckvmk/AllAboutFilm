@@ -11,6 +11,11 @@ class User(AbstractUser):
     first_name, last_name, hashed password). Authorization is handled through
     Django Groups/Permissions (Customer, Employee, Manager groups)."""
 
+    nickname = models.CharField(max_length=50, blank=True)
+    avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
+    region = models.CharField(max_length=100, blank=True)
+    country = models.CharField(max_length=100, blank=True)
+
     def __str__(self):
         return self.username
 

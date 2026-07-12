@@ -9,6 +9,7 @@ from django.views.decorators.http import require_POST
 
 from .forms import (
     ContactForm, LoginForm, RegistrationForm, PasswordRecoveryForm,
+    CustomerProfileForm,
 )
 from .models import Product, Camera, Lens, Film, ShippingMethod, GearCondition
 
@@ -193,9 +194,9 @@ def contact(request):
     return render(request, 'home/contact.html', {'form': form, 'submitted': submitted})
 
 def account(request):
-    # Logged in -> show the (placeholder) account page.
+    # Logged in -> show the account dashboard.
     if request.user.is_authenticated:
-        return render(request, 'home/account.html')
+        return _account_dashboard(request)
 
     # Otherwise the account page IS the login page.
     if request.method == 'POST':
@@ -227,6 +228,31 @@ def account(request):
     else:
         form = LoginForm()
     return render(request, 'home/account.html', {'form': form})
+
+
+def _account_dashboard(request):
+    """The logged-in account page. For now only the Customer panel exists;
+    Employee/Manager panels come later."""
+    user = request.user
+    is_customer = user.groups.filter(name='Customer').exists()
+
+    profile_form = None
+    if is_customer:
+        if request.method == 'POST':
+            profile_form = CustomerProfileForm(request.POST, request.FILES, instance=user)
+            if profile_form.is_valid():
+                profile_form.save()
+                messages.success(request, 'Your profile has been updated.')
+                return redirect('account')
+        else:
+            profile_form = CustomerProfileForm(instance=user)
+
+    return render(request, 'home/account.html', {
+        'is_customer': is_customer,
+        'profile_form': profile_form,
+        'wishlist_items': [],   # populated once the wishlist is built
+        'orders': [],           # populated once orders are built
+    })
 
 
 def register(request):

@@ -172,6 +172,41 @@ class RegistrationForm(forms.Form):
         return cleaned
 
 
+class CustomerProfileForm(forms.ModelForm):
+    """Customer account-administration panel: edit personal info + avatar."""
+
+    first_name = forms.CharField(
+        label="First Name", min_length=2, max_length=50, validators=[name_validator]
+    )
+    last_name = forms.CharField(
+        label="Last Name", min_length=2, max_length=50, validators=[name_validator]
+    )
+
+    class Meta:
+        model = User
+        fields = ["first_name", "last_name", "nickname", "avatar", "region", "country"]
+        labels = {"nickname": "Nickname", "avatar": "Profile Picture"}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_method = "post"
+        self.helper.attrs = {"novalidate": ""}
+        self.helper.layout = Layout(
+            Row(
+                Column("first_name", css_class="col-sm-6"),
+                Column("last_name", css_class="col-sm-6"),
+            ),
+            "nickname",
+            "avatar",
+            Row(
+                Column("region", css_class="col-sm-6"),
+                Column("country", css_class="col-sm-6"),
+            ),
+            Submit("profile_submit", "Save Changes", css_class="w-100"),
+        )
+
+
 class PasswordRecoveryForm(forms.Form):
     username_or_email = forms.CharField(label="Username or Email")
     new_password = forms.CharField(

@@ -3,10 +3,53 @@
 
 {% block content %}
     {% if user.is_authenticated %}
-        <div class="container py-5 text-center">
-            <i class="fas fa-user-circle mb-3" style="font-size: 4rem; color: var(--text-color);" aria-hidden="true"></i>
-            <h1>Welcome, {{ user.username }}</h1>
-            <p class="text-muted">Your account page is coming soon.</p>
+        <div class="container py-5">
+            <!-- Greeting -->
+            <div class="account-header d-flex align-items-center gap-3 mb-4">
+                <div class="account-avatar">
+                    {% if user.avatar %}
+                        <img src="{{ user.avatar.url }}" alt="{{ user.get_full_name }} avatar">
+                    {% else %}
+                        <i class="fas fa-user-circle" aria-hidden="true"></i>
+                    {% endif %}
+                </div>
+                <h1 class="mb-0">Welcome, {{ user.get_full_name|default:user.username }}</h1>
+            </div>
+
+            {% if is_customer %}
+                <!-- Account administration -->
+                <section class="account-panel p-4 rounded mb-4">
+                    <h3 class="text-start">Account Administration</h3>
+                    <hr>
+                    {% crispy profile_form %}
+                </section>
+
+                <!-- Wishlist -->
+                <section class="account-panel p-4 rounded mb-4">
+                    <h3 class="text-start">My Wishlist</h3>
+                    <hr>
+                    {% if wishlist_items %}
+                        {# populated once the wishlist is built #}
+                    {% else %}
+                        <p class="text-muted mb-0">Your wishlist is empty.</p>
+                    {% endif %}
+                </section>
+
+                <!-- Orders -->
+                <section class="account-panel p-4 rounded">
+                    <h3 class="text-start">My Orders</h3>
+                    <hr>
+                    {% if orders %}
+                        {# populated once orders are built #}
+                    {% else %}
+                        <p class="text-muted mb-0">You haven't placed any orders yet.</p>
+                    {% endif %}
+                </section>
+            {% else %}
+                <section class="account-panel p-4 rounded">
+                    <p class="text-muted mb-0">Your account panel is coming soon.</p>
+                </section>
+            {% endif %}
         </div>
     {% else %}
         <div class="container py-5">
