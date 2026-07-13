@@ -14,7 +14,11 @@ from .forms import (
 from .models import Product, Camera, Lens, Film, ShippingMethod, GearCondition
 
 def home(request):
-    return render(request, 'home/welcome.html')
+    # "Just In" showcases the most recent camera and lens (highest code = newest).
+    latest_camera = Camera.objects.prefetch_related('images').order_by('-code').first()
+    latest_lens = Lens.objects.prefetch_related('images').order_by('-code').first()
+    just_in = [item for item in (latest_camera, latest_lens) if item is not None]
+    return render(request, 'home/welcome.html', {'just_in': just_in})
 
 # Price buckets. Each entry: (key, dropdown label, ORM lookups). Upper bound is
 # inclusive; the next bucket starts just above it, so they don't overlap.

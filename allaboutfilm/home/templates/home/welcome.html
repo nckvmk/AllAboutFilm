@@ -1,10 +1,42 @@
 {% extends "home/base.html" %}
+{% load static_extras %}
+
+{% block hero %}
+    <section class="hero-banner" style="background-image: url('{% static_v 'images/home.jpg' %}');">
+        <h1 class="hero-title">The Place To Buy &amp; Trade Analog Photography Gear</h1>
+    </section>
+{% endblock %}
 
 {% block content %}
-    <h1>Welcome To Our Film Photography Shop</h1>
+    <h2>Welcome To All About Film</h2>
 
     <div class="container-lg py-4 border-bottom pb-3 mb-3">
-        <p id="intro" lang="en-us">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed a leo sit amet purus eleifend auctor eu a arcu. Morbi a lacus lacus. Curabitur nec sem porttitor, tristique risus ac, commodo lorem. Duis posuere laoreet nisi eget porttitor. Cras nec pulvinar libero. Pellentesque fringilla diam et lobortis blandit. Sed urna diam, laoreet in efficitur sit amet, posuere a lectus. Nunc eget velit a nulla volutpat venenatis. Etiam semper metus id elit viverra, a volutpat enim vehicula. Nam eget purus justo. Nunc luctus lacus non tellus consequat auctor. Nam volutpat ac felis sed sagittis. Proin convallis urna eros, ullamcorper condimentum ligula finibus et. Phasellus ipsum lacus, eleifend quis iaculis nec, porta vitae leo. Curabitur venenatis risus nulla, sit amet congue urna ornare ut. Aenean aliquam, risus at iaculis fermentum, massa nibh auctor justo, ac tempus leo arcu at leo. Nullam ullamcorper ligula aliquam, vehicula enim a, egestas tortor. Nunc sed convallis eros. Phasellus eget orci turpis. Praesent vel massa hendrerit, commodo mauris et, mollis ex. Ut fermentum arcu ut massa feugiat pharetra. Vestibulum auctor est eget lacus pharetra, non scelerisque enim dictum. Donec in varius ligula. Etiam ut ullamcorper nisl. Proin venenatis, velit eget maximus rutrum, lectus sapien tempus ante, in.
+        <p id="intro" lang="en-us">
+            We specialize in buying, selling, and trading pre-owned film cameras and lenses, carefully selecting equipment from every era of analog photography up to the early 2000s. Whether you're searching for your first 35mm camera, expanding your collection, or looking for a reliable vintage lens, we're here to help you find the right gear.<br><br>
+
+            Our shelves are stocked with a wide range of film, including fresh and expired rolls in 35mm, 120, Instant, and Sheet Film formats, giving photographers endless creative possibilities.<br><br>
+
+            Thinking of selling your equipment? We offer free, no-obligation valuations for film cameras, lenses, and accessories. Whether you're trading in a single camera or an entire collection, we'll provide an honest assessment and a fair offer.<br><br>
+
+            At All About Film, we believe every camera has another story to tell. Our goal is to connect photographers with equipment that deserves to be used, appreciated, and passed on to the next generation of film enthusiasts.<br><br>
+
+            Whether you're just discovering analog photography or you've been shooting film for years, we're always happy to share our knowledge and help you find exactly what you're looking for.<br><br>
         </p>
     </div>
+
+    {% if just_in %}
+    <section id="just_in" class="container pb-5">
+        <h2 class="pb-3">Just In</h2>
+        <div class="row row-cols-1 row-cols-md-2 g-4 justify-content-center">
+            {% for item in just_in %}
+                {% include "home/_product_card.html" %}
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static_v 'js/toast.js' %}" defer></script>
+    <script src="{% static_v 'js/lightbox.js' %}" defer></script>
 {% endblock %}

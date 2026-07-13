@@ -745,6 +745,40 @@ footer {
 }
 
 /* ============================================================
+   Home hero banner
+   ============================================================ */
+.hero-banner {
+    position: relative;
+    width: 100%;
+    min-height: 380px;
+    background-color: #1b1b1f; /* fallback until the image loads */
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2.5rem 1rem;
+}
+
+.hero-banner::before { /* dark overlay so white text stays readable */
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.hero-title {
+    position: relative;
+    z-index: 1;
+    margin: 0;
+    max-width: 950px;
+    text-align: center;
+    color: #fff; /* static white in both themes */
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.65);
+    font-family: "Special Gothic Expanded One", sans-serif, Arial;
+}
+
+/* ============================================================
    Customer account page
    ============================================================ */
 .account-header h1 {
