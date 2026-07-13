@@ -98,7 +98,7 @@ class ContactForm(forms.Form):
 class LoginForm(forms.Form):
     username_or_email = forms.CharField(
         label="Username or Email",
-        widget=forms.TextInput(attrs={"placeholder": "Username or email"}),
+        widget=forms.TextInput(),
     )
     password = forms.CharField(label="Password", widget=forms.PasswordInput())
     remember_me = forms.BooleanField(label="Remember me", required=False)

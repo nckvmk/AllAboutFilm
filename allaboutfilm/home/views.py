@@ -184,6 +184,12 @@ def item_detail(request, code):
 def about(request):
     return render(request, 'home/about.html')
 
+def shipping(request):
+    return render(request, 'home/shipping.html')
+
+def payment(request):
+    return render(request, 'home/payment.html')
+
 def contact(request):
     submitted = False
     if request.method == 'POST':
