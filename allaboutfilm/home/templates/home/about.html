@@ -1,107 +1,36 @@
 {% extends "home/base.html" %}
+{% load static_extras %}
 
 {% block content %}
-    <div class="h1 py-4">
-        <h1>Meet The Team</h1>
-    </div>
-
-    <section id="carousel_team" class="container-sm pb-5 border-bottom">
-        <div id="about-carousel" class="carousel slide">
-            <div class="carousel-indicators">
-                <button type="button" data-bs-target="#about-carousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
-                <button type="button" data-bs-target="#about-carousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
-                <button type="button" data-bs-target="#about-carousel" data-bs-slide-to="2" aria-label="Slide 3"></button>
+    <section id="about-intro" class="about-intro py-5">
+        <div class="row align-items-center g-5">
+            <div class="col-lg-6 order-2 order-lg-1">
+                <h1 class="about-intro-title">Who We Are</h1>
+                <p>
+                    Founded by Nick & George Vamvakas in 2025, All About Film has always been committed to making gear more
+                    accessible and affordable, and helping to visualise a more sustainable future. We now
+                    recirculate 1000 items a year, extending the life and creative potential of photo and
+                    video equipment for creators around the world.
+                </p>
+                <p class="mb-0">
+                    Headquartered in the creative community of Elefsina in Greece, the MPB team
+                    includes trained camera experts and seasoned photographers and videographers who bring
+                    their passion to work every day to deliver outstanding service. All used gear is inspected
+                    carefully by our product specialists and comes with a twelve-month warranty to give our
+                    customers peace of mind that buying used doesn&rsquo;t mean sacrificing reliability.
+                </p>
             </div>
-            <div class="carousel-inner rounded">
-                <!-- Nick Vamvakas -->
-                <div class="carousel-item active">
-                    <img class="d-block" src="images/team/nick.jpg" alt="Nick Vamvakas (Owner) posing with his Tele right next to his Twin Reverb">
-                    <div class="carousel-caption container-auto">
-                        <h4 class="carousel-name">Nick Vamvakas <br> (Owner/IT Technician/Luthier)</h4>
-                        <p class="carousel-info">Since early high school I have always been fascinated by blues and classic rock music. That was also right around the time I picked up playing the guitar. Although I started as a self-taught acoustic player, I've grown to love electric guitars and amps more than anything in this world. Besides the self-expressive and artistic aspect of being a musician, I also love using vintage music gear. I am telling you these old timers really got some mojo in them that modern stuff doesn't quite have. Besides only playing guitars, I also find joy in fixing them up and customizing them. All that, coupled with the fact that trading vintage music gear is kind of a niche market in Greece, are what made me to dive into this line of business. Furthermore, I am majoring in IT, so I also handle and maintain all the digital infrastructure of my business.</p>
-                    </div>
-                </div>
-                <!-- George Vamvakas -->
-                <div class="carousel-item">
-                    <img class="d-block" src="images/team/george.jpg" alt="George Vamvakas (Customer Support) posing in front of a stone wall">
-                    <div class="carousel-caption container-auto">
-                        <h4 class="carousel-name">George Vamvakas <br> (Sales Coordinator & Logistics)</h4>
-                        <p class="carousel-info mx-4">I cannot say that I was particularly interested in music until my brother started playing. He would share with me everything that he had picked up each time, and he would motivate me to give it a go as well. Although I am not as passionate about music and guitars as he is, I like playing from time to time. I am studying economics so, when he offered me a spot on his store as a sales coordinator, I knew it would be a nice addition to my resume.</p>
-                    </div>
-                </div>
-                <!-- Kostas Dimitrakopoulos -->
-                <div class="carousel-item">
-                    <img class="d-block" src="images/team/konstantinos.jpg" alt="Konstantinos Dimitrakopoulos (Customer Support) posing with his dog">
-                    <div class="carousel-caption container-auto">
-                        <h4 class="carousel-name">Kostantinos Dimitrakopoulos<br> (Customer Support)</h4>
-                        <p class="carousel-info">Me and Nick have been friends since forever. He would always find a way to sneak-in his acoustic during school events, and together with other friends we would have a blast. Seeing him become the guitar connoisseur he is now, once made me jokingly suggest to open up a guitar shop. And yet here we are... I have a major in Psychology, and I have worked front-desk at my father's hardware store for some years. So, when he offered me a customer support role in his company, I grinned and he said "Welcome on board, you are starting this Monday".</p>
-                    </div>
-                </div>
+            <div class="col-lg-6 order-1 order-lg-2">
+                <img src="{% static_v 'images/founders.jpg' %}" alt="The founders of All About Film" class="about-intro-img">
             </div>
-            <button class="carousel-control-prev" type="button" data-bs-target="#about-carousel" data-bs-slide="prev" aria-label="Carousel Control Prev">
-                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                <span class="visually-hidden">Previous</span>
-            </button>
-            <button class="carousel-control-next" type="button" data-bs-target="#about-carousel" data-bs-slide="next" aria-label="Carousel control Next">
-                <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                <span class="visually-hidden">Next</span>
-            </button>
         </div>
     </section>
-
-    <section id="trust" class="container-sm border-bottom py-4">
-        <h3>Why You Can Trust Us</h3>
-        <p id="why_trust_us" lang="en">
-            For collectors and musicians alike, confidence is essential when acquiring vintage instruments. Our reputation is built on expertise, transparency, and a genuine passion for historically significant guitars and amplifiers.
-            <br><br>
-            Every piece in our collection undergoes a thorough evaluation and is documented with detailed descriptions, high-resolution photography, and accurate condition reporting. Whenever possible, we provide information regarding originality, modifications, provenance, and service history, ensuring that customers can make informed purchasing decisions.
-            <br><br>
-            We conduct transactions both through our showroom and our <a href="https://reverb.com/shop/example-shop" aria-label="Reverb" target="_blank"><em>Reverb</em></a> storefront, offering secure and established purchasing channels backed by clear communication and professional customer service. Whether acquiring a player's-grade instrument or a rare collector's piece, customers can expect the same level of care, integrity, and attention to detail throughout the process.
-            <br><br>
-            Our goal is not simply to facilitate transactions, but to build lasting relationships with musicians, collectors, and enthusiasts who share our appreciation for exceptional vintage gear.
-        </p>
-    </section>
-    <section id="testimonials" class="container py-4">
-        <h3>Testimonials</h3>
-        <h5>Don't take our word for it, you can read what our lovely customers have to say!</h5>
-
-        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 pt-3">
-            <!--Elias Zaikos-->
-            <div class="col">
-                <div class="card">
-                    <img class="d-block" src="images/testimonials/Zaikos.jpg" alt="Portrait of Elias Zaikos">
-                    <div class="card-body rounded">
-                        <p class="card-text">"I was looking to sell my '66 Marshall Bluesbreaker, but I was reluctant to make a listing for it on a generic marketplace. I had heard about this new boutique guitar store by a friend and I was eager to pay a visit. I have been to many such stores abroad, but none could match Nick's Guitar Emporium. The owner is very cheerful and easy-going, the atmosphere very warm and the catalog very interesting. I knew from the get-go that this is the place to sell my amp. Nick handles each guitar and amp with love and respect and does not sell them to just anyone."</p>
-                        <div class="customer-name d-flex justify-content-between align-items-center">
-                            <span class="h5">Elias Zaikos</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!--Keith Richards-->
-            <div class="col">
-                <div class="card">
-                    <img class="d-block" src="images/testimonials/Richards.png" alt="Keith Richards on stage">
-                    <div class="card-body rounded">
-                        <p class="card-text">"I was on holiday in Greece when I read about this new fancy guitar store that is all the rage. It is located not far from where I was staying, so I thought it would not be a bad idea to see what's all the hype about. Meeting Nick was like meeting an old friend that seems to have been stuck at 24. He was very welcoming, polite and extremely modest. He even offered me to jam with him. Very cool bloke to play with, and knows the blues really damn well. I ended up buying a really nice 30s Parlor acoustic. Overall, the experience was less like buying a guitar but more like jamming with a fellow bluesman and grabbing a souvenir on the way out. If I find the time to visit Greece again, I am totally stopping by this lovely store."</p>
-                        <div class="customer-name d-flex justify-content-between align-items-center">
-                            <span class="h5">Keith Richards</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!--Andreas Gomozias-->
-            <div class="col">
-                <div class="card rounded">
-                    <img class="d-block" src="images/testimonials/Gomozias.jpg" alt="Portrait of Andreas Gomozias">
-                    <div class="card-body rounded">
-                        <p class="card-text">"I first heard about the shop after meeting Nick following a local gig, back when the store had just opened its doors. We got talking about old Fender amps, and a few weeks later I stopped by to check out the inventory. I ended up taking home a Fender Vibrolux that's become one of my favorite pieces of gear. The amp was exactly as described, and the whole experience felt more like talking with a fellow musician than making a purchase. It's the kind of place guitar players are always hoping to find."</p>
-                        <div class="customer-name d-flex justify-content-between align-items-center">
-                            <span class="h5">Andreas Gomozias</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    <section id="about-promise" class="about-promise border-top py-5">
+        <div class="about-promise align-items-center">
+            <h1 class="about-promise-title">Our Promise</h1>
+                <p>
+                    Our unique platform provides the right price for every piece of gear based on make, model, cosmetic condition, and market, across a huge selection of camera bodies, lenses and film stocks. At All About Film, there’s something for everyone who wants to try something new, hone their skills, or pursue their passion — and it won’t cost the earth.
+                </p>
         </div>
     </section>
 {% endblock %}

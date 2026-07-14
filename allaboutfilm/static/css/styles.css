@@ -839,6 +839,35 @@ footer {
 }
 
 /* ============================================================
+   About page intro (two-column: text + founders image)
+   ============================================================ */
+.about-intro {
+    max-width: 1200px;
+    margin-inline: auto;
+}
+
+/* Headings are centred site-wide; the intro heading sits left, above the copy. */
+.about-intro-title {
+    text-align: left;
+    font-size: clamp(2rem, 4vw, 3rem);
+    margin-bottom: 1.5rem;
+}
+
+.about-intro p {
+    font-size: 1.05rem;
+    line-height: 1.6;
+    opacity: 0.85; /* slightly softer than the heading, same theme colour */
+}
+
+.about-intro-img {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: 12px;
+    box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.12);
+}
+
+/* ============================================================
    Smooth colour transition when switching light/dark
    ============================================================ */
 body, main, nav.navbar, footer,
