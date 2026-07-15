@@ -20,8 +20,8 @@ phone_validator = RegexValidator(
     message="Enter a valid phone number.",
 )
 postal_validator = RegexValidator(
-    regex=r"^[A-Za-z0-9\s\-]{3,10}$",
-    message="Enter a valid postal code.",
+    regex=r"^\d{5}$",
+    message="Enter a valid 5-digit postal code.",
 )
 
 # Names: letters (plus spaces, hyphens and apostrophes for names like "Anne-Marie"
@@ -289,7 +289,7 @@ class CheckoutForm(forms.Form):
     billing_address = forms.CharField(label="Address", max_length=255)
     billing_region = forms.CharField(label="Region", max_length=100)
     billing_country = forms.CharField(label="Country", max_length=100)
-    billing_postal_code = forms.CharField(label="Postal Code", max_length=20, validators=[postal_validator])
+    billing_postal_code = forms.CharField(label="Postal Code", max_length=5, validators=[postal_validator])
 
     # Shipping address (required only when different from billing)
     shipping_same_as_billing = forms.BooleanField(
@@ -299,14 +299,14 @@ class CheckoutForm(forms.Form):
     shipping_address = forms.CharField(label="Address", max_length=255, required=False)
     shipping_region = forms.CharField(label="Region", max_length=100, required=False)
     shipping_country = forms.CharField(label="Country", max_length=100, required=False)
-    shipping_postal_code = forms.CharField(label="Postal Code", max_length=20, required=False)
+    shipping_postal_code = forms.CharField(label="Postal Code", max_length=5, required=False, validators=[postal_validator])
 
     # Payment
     payment_method = forms.ChoiceField(choices=PAYMENT_CHOICES, widget=forms.RadioSelect)
-    card_number = forms.CharField(label="Card Number", max_length=23, required=False)
+    card_number = forms.CharField(label="Card Number", max_length=19, required=False)
     card_exp_month = forms.CharField(label="Month (MM)", max_length=2, required=False)
     card_exp_year = forms.CharField(label="Year (YY)", max_length=2, required=False)
-    card_cvc = forms.CharField(label="CVC", max_length=4, required=False)
+    card_cvc = forms.CharField(label="CVC", max_length=3, required=False)
 
     # Shipping method + terms
     shipping_method = forms.ModelChoiceField(
@@ -335,10 +335,12 @@ class CheckoutForm(forms.Form):
         self.fields["payment_method"].widget.attrs.update({"class": "form-check-input"})
         self.fields["shipping_same_as_billing"].widget.attrs.update({"class": "form-check-input"})
         self.fields["agree_terms"].widget.attrs.update({"class": "form-check-input"})
-        self.fields["card_number"].widget.attrs.update({"placeholder": "1234 5678 9012 3456", "inputmode": "numeric"})
-        self.fields["card_exp_month"].widget.attrs.update({"placeholder": "MM"})
-        self.fields["card_exp_year"].widget.attrs.update({"placeholder": "YY"})
-        self.fields["card_cvc"].widget.attrs.update({"placeholder": "CVC"})
+        self.fields["card_number"].widget.attrs.update({"placeholder": "1234 5678 9012 3456", "inputmode": "numeric", "maxlength": "19"})
+        self.fields["card_exp_month"].widget.attrs.update({"placeholder": "MM", "inputmode": "numeric", "maxlength": "2"})
+        self.fields["card_exp_year"].widget.attrs.update({"placeholder": "YY", "inputmode": "numeric", "maxlength": "2"})
+        self.fields["card_cvc"].widget.attrs.update({"placeholder": "CVC", "inputmode": "numeric", "maxlength": "3"})
+        for name in ("billing_postal_code", "shipping_postal_code"):
+            self.fields[name].widget.attrs.update({"inputmode": "numeric", "maxlength": "5", "placeholder": "12345"})
 
     def clean(self):
         cleaned = super().clean()
@@ -358,8 +360,8 @@ class CheckoutForm(forms.Form):
 
             if not number:
                 self.add_error("card_number", "This field is required.")
-            elif not number.isdigit() or not (13 <= len(number) <= 19):
-                self.add_error("card_number", "Enter a valid card number.")
+            elif not number.isdigit() or len(number) != 16:
+                self.add_error("card_number", "Enter a valid 16-digit card number.")
 
             if not month:
                 self.add_error("card_exp_month", "This field is required.")
@@ -373,8 +375,8 @@ class CheckoutForm(forms.Form):
 
             if not cvc:
                 self.add_error("card_cvc", "This field is required.")
-            elif not (cvc.isdigit() and 3 <= len(cvc) <= 4):
-                self.add_error("card_cvc", "Enter a valid CVC.")
+            elif not (cvc.isdigit() and len(cvc) == 3):
+                self.add_error("card_cvc", "Enter a valid 3-digit CVC.")
 
             # Reject already-expired cards.
             if (month.isdigit() and year.isdigit() and len(month) == 2

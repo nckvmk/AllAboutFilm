@@ -41,4 +41,18 @@ $(function () {
             $grand.text(money(subtotal + price));
         }
     });
+
+    // ---- Input formatting ----
+    // Card number: digits only, grouped into 4s ("1234 5678 9012 3456").
+    $('input[name="card_number"]').on('input', function () {
+        var digits = this.value.replace(/\D/g, '').slice(0, 16);
+        this.value = digits.replace(/(.{4})/g, '$1 ').trim();
+    });
+
+    // Numeric-only fields (CVC, expiry month/year, postal codes) with a max length.
+    $('input[name="card_cvc"], input[name="card_exp_month"], input[name="card_exp_year"], ' +
+      'input[name="billing_postal_code"], input[name="shipping_postal_code"]').on('input', function () {
+        var max = parseInt(this.getAttribute('maxlength'), 10) || 99;
+        this.value = this.value.replace(/\D/g, '').slice(0, max);
+    });
 });

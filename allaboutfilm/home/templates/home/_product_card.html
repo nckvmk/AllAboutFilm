@@ -39,11 +39,15 @@
             </p>
             <div class="mt-auto d-flex justify-content-between align-items-center">
                 <span class="price h5 mb-0">&euro;{{ item.price }}</span>
-                <button class="btn btn-primary add-to-cart-btn"
-                        data-name="{{ item.manufacturer }} {{ item.model }}"
-                        data-code="{{ item.code }}">
-                    <i class="fas fa-cart-plus"></i> Add
-                </button>
+                {% if item.stock > 0 %}
+                    <button class="btn btn-primary add-to-cart-btn"
+                            data-name="{{ item.manufacturer }} {{ item.model }}"
+                            data-code="{{ item.code }}">
+                        <i class="fas fa-cart-plus"></i> Add
+                    </button>
+                {% else %}
+                    <span class="out-of-stock-badge">Out of stock</span>
+                {% endif %}
             </div>
         </div>
     </div>

@@ -272,7 +272,7 @@ def _account_dashboard(request):
         'is_customer': is_customer,
         'profile_form': profile_form,
         'wishlist_items': [],   # populated once the wishlist is built
-        'orders': [],           # populated once orders are built
+        'orders': user.orders.all(),
     })
 
 
