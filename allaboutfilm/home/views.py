@@ -1,17 +1,24 @@
+import json
 from decimal import Decimal
 
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout, get_user_model
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import Group
+from django.db import transaction
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, JsonResponse
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
 from .forms import (
     ContactForm, LoginForm, RegistrationForm, PasswordRecoveryForm,
-    CustomerProfileForm,
+    CustomerProfileForm, CheckoutForm,
 )
-from .models import Product, Camera, Lens, Film, ShippingMethod, GearCondition
+from .models import (
+    Product, Camera, Lens, Film, ShippingMethod, GearCondition,
+    Order, OrderItem,
+)
 
 def home(request):
     # "Just In" showcases the most recent camera and lens (highest code = newest).
@@ -234,9 +241,13 @@ def account(request):
                     # "Remember me" unchecked -> session ends when the browser closes.
                     if not form.cleaned_data.get('remember_me'):
                         request.session.set_expiry(0)
+                    next_url = form.cleaned_data.get('next')
+                    if next_url and url_has_allowed_host_and_scheme(
+                            next_url, allowed_hosts={request.get_host()}):
+                        return redirect(next_url)
                     return redirect('account')
     else:
-        form = LoginForm()
+        form = LoginForm(initial={'next': request.GET.get('next', '')})
     return render(request, 'home/account.html', {'form': form})
 
 
@@ -353,7 +364,6 @@ def cart(request):
         'items': items,
         'subtotal': subtotal,
         'item_count': sum(cart.values()),
-        'shipping_methods': ShippingMethod.objects.filter(is_active=True),
     })
 
 
@@ -449,3 +459,114 @@ def remove_from_cart(request):
         'cart_count': sum(cart.values()),
         'empty': len(cart) == 0,
     })
+
+
+# ---------------------------------------------------------------------------
+# Checkout & orders
+# ---------------------------------------------------------------------------
+def _cart_items(request):
+    """Resolve the session cart into a list of {product, quantity, line_total}
+    plus the subtotal."""
+    cart = _get_cart(request)
+    products = Product.objects.filter(code__in=cart.keys()).prefetch_related('images')
+    items = []
+    subtotal = Decimal('0.00')
+    for product in products:
+        quantity = cart.get(product.code, 0)
+        line_total = product.price * quantity
+        subtotal += line_total
+        items.append({'product': product, 'quantity': quantity, 'line_total': line_total})
+    return items, subtotal
+
+
+@login_required
+def checkout(request):
+    items, subtotal = _cart_items(request)
+    if not items:
+        return redirect('cart')
+
+    shipping_prices = {
+        str(m.pk): float(m.price)
+        for m in ShippingMethod.objects.filter(is_active=True)
+    }
+
+    if request.method == 'POST':
+        form = CheckoutForm(request.POST)
+        if form.is_valid():
+            # Guard against stock changing since items were added to the cart.
+            out_of_stock = [
+                it for it in items if it['quantity'] > it['product'].stock
+            ]
+            if out_of_stock:
+                for it in out_of_stock:
+                    p = it['product']
+                    messages.error(request, f'Only {p.stock} of {p.manufacturer} {p.model} left in stock.')
+                return redirect('cart')
+
+            order = _place_order(request, form, items, subtotal)
+            _save_cart(request, {})  # empty the cart
+            messages.success(request, 'Your order has been placed successfully!')
+            return redirect('order_confirmation', order_id=order.pk)
+        else:
+            # Mark invalid fields so they render with the red Bootstrap border.
+            for name in form.errors:
+                if name in form.fields:
+                    widget = form.fields[name].widget
+                    widget.attrs['class'] = (widget.attrs.get('class', '') + ' is-invalid').strip()
+    else:
+        form = CheckoutForm(initial={
+            'first_name': request.user.first_name,
+            'last_name': request.user.last_name,
+            'email': request.user.email,
+        })
+
+    return render(request, 'home/checkout.html', {
+        'form': form,
+        'items': items,
+        'subtotal': subtotal,
+        'shipping_prices_json': json.dumps(shipping_prices),
+    })
+
+
+@transaction.atomic
+def _place_order(request, form, items, subtotal):
+    cd = form.cleaned_data
+    same = cd['shipping_same_as_billing']
+    shipping_method = cd['shipping_method']
+    shipping_cost = shipping_method.price
+    total = subtotal + shipping_cost
+
+    order = Order.objects.create(
+        user=request.user,
+        first_name=cd['first_name'], last_name=cd['last_name'],
+        email=cd['email'], phone=cd['phone'],
+        billing_address=cd['billing_address'], billing_region=cd['billing_region'],
+        billing_country=cd['billing_country'], billing_postal_code=cd['billing_postal_code'],
+        shipping_same_as_billing=same,
+        shipping_address=cd['billing_address'] if same else cd['shipping_address'],
+        shipping_region=cd['billing_region'] if same else cd['shipping_region'],
+        shipping_country=cd['billing_country'] if same else cd['shipping_country'],
+        shipping_postal_code=cd['billing_postal_code'] if same else cd['shipping_postal_code'],
+        payment_method=cd['payment_method'],
+        shipping_method=shipping_method,
+        shipping_cost=shipping_cost,
+        subtotal=subtotal,
+        total=total,
+    )
+    for it in items:
+        product = it['product']
+        OrderItem.objects.create(
+            order=order, product=product,
+            quantity=it['quantity'], price_at_purchase=product.price,
+        )
+        product.stock = max(0, product.stock - it['quantity'])
+        product.save(update_fields=['stock'])
+    return order
+
+
+@login_required
+def order_confirmation(request, order_id):
+    order = get_object_or_404(
+        Order.objects.prefetch_related('items__product'), pk=order_id, user=request.user
+    )
+    return render(request, 'home/order_confirmation.html', {'order': order})

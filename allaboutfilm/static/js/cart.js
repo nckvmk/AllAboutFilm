@@ -1,44 +1,21 @@
-/* Shopping cart page: quantity +/-, remove, live subtotal / grand total,
- * and the (dummy for now) checkout guard. jQuery.
+/* Shopping cart page: quantity +/- and remove, with a live subtotal.
+ * (Shipping/grand total now live on the checkout page.) jQuery.
  * Relies on window.showToast / window.getCsrfToken / window.updateCartBadge
  * defined in toast.js. */
 
 $(function () {
-    var $summary = $('.cart-summary');
-
     function money(value) {
         return '€' + Number(value).toFixed(2);
     }
 
-    function subtotal() {
-        return parseFloat($summary.attr('data-subtotal')) || 0;
-    }
-
-    function shippingPrice() {
-        var select = document.querySelector('#shipping-select');
-        var opt = select ? select.selectedOptions[0] : null;
-        var price = opt ? parseFloat(opt.getAttribute('data-price')) : NaN;
-        return isNaN(price) ? null : price;
-    }
-
-    function updateGrandTotal() {
-        var ship = shippingPrice();
-        $('.summary-grand-total').text(money(subtotal() + (ship || 0)));
-    }
-
     function setSubtotal(value) {
-        $summary.attr('data-subtotal', value);
         $('.summary-subtotal').text(money(value));
-        updateGrandTotal();
     }
 
     function setCount(count) {
         $('.cart-item-count').text(count + ' item' + (count === 1 ? '' : 's'));
         window.updateCartBadge(count);
     }
-
-    // ---- Shipping selection -> grand total ----
-    $('#shipping-select').on('change', updateGrandTotal);
 
     // Ignore clicks on a row that already has a request in flight, so rapid
     // clicking can't fire overlapping requests that race on the session.
@@ -89,16 +66,9 @@ $(function () {
             window.showToast(res.message);
             if (res.empty) {
                 $('#cart-items').html('<p class="cart-empty text-center py-5">Your shopping cart is empty.</p>');
+                $('.summary-subtotal').closest('.cart-summary').find('a.btn')
+                    .replaceWith('<button type="button" class="btn btn-dark w-100 py-2" disabled>Proceed to Checkout</button>');
             }
         });
-    });
-
-    // ---- Checkout guard (dummy until auth exists) ----
-    $('#checkout-btn').on('click', function () {
-        if (shippingPrice() === null) {
-            alert('Please select a shipping method before proceeding to checkout.');
-            return;
-        }
-        alert('You must be logged in to place an order.');
     });
 });

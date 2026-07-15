@@ -39,6 +39,8 @@ urlpatterns = [
     path('cart/add/', views.add_to_cart, name='add_to_cart'),
     path('cart/update/', views.update_cart, name='update_cart'),
     path('cart/remove/', views.remove_from_cart, name='remove_from_cart'),
+    path('checkout/', views.checkout, name='checkout'),
+    path('order/<int:order_id>/', views.order_confirmation, name='order_confirmation'),
 ]
 
 # Serve user-uploaded media files during development.

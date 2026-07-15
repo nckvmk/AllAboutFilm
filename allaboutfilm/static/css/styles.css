@@ -833,9 +833,30 @@ footer {
 /* Muted text follows the theme (Bootstrap's default grey doesn't). */
 .account-panel .text-muted,
 .cart-panel .text-muted,
-.cart-summary .text-muted {
+.cart-summary .text-muted,
+.checkout-panel .text-muted,
+.checkout-summary .text-muted {
     color: var(--text-color) !important;
     opacity: 0.65;
+}
+
+/* ============================================================
+   Checkout page
+   ============================================================ */
+.checkout-panel,
+.checkout-summary {
+    background: var(--base-variant);
+    color: var(--text-color);
+}
+
+.payment-option {
+    padding: 0.3rem 0;
+}
+
+/* Conditional sections start hidden; checkout.js reveals them when relevant. */
+#shipping-fields,
+#card-fields {
+    display: none;
 }
 
 /* ============================================================

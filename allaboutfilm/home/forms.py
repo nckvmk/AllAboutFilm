@@ -1,5 +1,6 @@
 """Forms for the home app, rendered with django-crispy-forms (Bootstrap 5)."""
 
+import datetime
 import re
 
 from django import forms
@@ -10,7 +11,18 @@ from django.core.validators import RegexValidator
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Row, Column, Submit
 
+from .models import ShippingMethod
+
 User = get_user_model()
+
+phone_validator = RegexValidator(
+    regex=r"^[+\d][\d\s\-().]{6,}$",
+    message="Enter a valid phone number.",
+)
+postal_validator = RegexValidator(
+    regex=r"^[A-Za-z0-9\s\-]{3,10}$",
+    message="Enter a valid postal code.",
+)
 
 # Names: letters (plus spaces, hyphens and apostrophes for names like "Anne-Marie"
 # or "O'Brien"), but no digits.
@@ -102,6 +114,7 @@ class LoginForm(forms.Form):
     )
     password = forms.CharField(label="Password", widget=forms.PasswordInput())
     remember_me = forms.BooleanField(label="Remember me", required=False)
+    next = forms.CharField(required=False, widget=forms.HiddenInput())
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -112,6 +125,7 @@ class LoginForm(forms.Form):
             "username_or_email",
             "password",
             "remember_me",
+            "next",
             Submit("submit", "Log In", css_class="w-100"),
         )
 
@@ -252,3 +266,122 @@ class PasswordRecoveryForm(forms.Form):
 
     def get_user(self):
         return self._user
+
+
+class CheckoutForm(forms.Form):
+    PAYMENT_CHOICES = [
+        ("INSTORE", "Cash/Card in-store"),
+        ("CARD", "Card"),
+        ("APPLE_PAY", "Apple Pay"),
+        ("GOOGLE_PAY", "Google Pay"),
+        ("PAYPAL", "PayPal"),
+        ("KLARNA", "Klarna"),
+        ("PAY_BY_BANK", "Pay By Bank"),
+    ]
+
+    # Contact
+    first_name = forms.CharField(label="First Name", min_length=2, max_length=50, validators=[name_validator])
+    last_name = forms.CharField(label="Last Name", min_length=2, max_length=50, validators=[name_validator])
+    email = forms.EmailField(label="E-mail")
+    phone = forms.CharField(label="Phone", max_length=30, validators=[phone_validator])
+
+    # Billing address
+    billing_address = forms.CharField(label="Address", max_length=255)
+    billing_region = forms.CharField(label="Region", max_length=100)
+    billing_country = forms.CharField(label="Country", max_length=100)
+    billing_postal_code = forms.CharField(label="Postal Code", max_length=20, validators=[postal_validator])
+
+    # Shipping address (required only when different from billing)
+    shipping_same_as_billing = forms.BooleanField(
+        label="Shipping address is the same as my billing address",
+        required=False, initial=True,
+    )
+    shipping_address = forms.CharField(label="Address", max_length=255, required=False)
+    shipping_region = forms.CharField(label="Region", max_length=100, required=False)
+    shipping_country = forms.CharField(label="Country", max_length=100, required=False)
+    shipping_postal_code = forms.CharField(label="Postal Code", max_length=20, required=False)
+
+    # Payment
+    payment_method = forms.ChoiceField(choices=PAYMENT_CHOICES, widget=forms.RadioSelect)
+    card_number = forms.CharField(label="Card Number", max_length=23, required=False)
+    card_exp_month = forms.CharField(label="Month (MM)", max_length=2, required=False)
+    card_exp_year = forms.CharField(label="Year (YY)", max_length=2, required=False)
+    card_cvc = forms.CharField(label="CVC", max_length=4, required=False)
+
+    # Shipping method + terms
+    shipping_method = forms.ModelChoiceField(
+        queryset=ShippingMethod.objects.none(),
+        empty_label="Nothing selected",
+        label="Shipping Method",
+    )
+    agree_terms = forms.BooleanField(
+        label="I Agree to the Terms & Conditions",
+        error_messages={"required": "You must agree to the Terms & Conditions to place your order."},
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["shipping_method"].queryset = ShippingMethod.objects.filter(is_active=True)
+
+        text_fields = [
+            "first_name", "last_name", "email", "phone",
+            "billing_address", "billing_region", "billing_country", "billing_postal_code",
+            "shipping_address", "shipping_region", "shipping_country", "shipping_postal_code",
+            "card_number", "card_exp_month", "card_exp_year", "card_cvc",
+        ]
+        for name in text_fields:
+            self.fields[name].widget.attrs.update({"class": "form-control"})
+        self.fields["shipping_method"].widget.attrs.update({"class": "form-select"})
+        self.fields["payment_method"].widget.attrs.update({"class": "form-check-input"})
+        self.fields["shipping_same_as_billing"].widget.attrs.update({"class": "form-check-input"})
+        self.fields["agree_terms"].widget.attrs.update({"class": "form-check-input"})
+        self.fields["card_number"].widget.attrs.update({"placeholder": "1234 5678 9012 3456", "inputmode": "numeric"})
+        self.fields["card_exp_month"].widget.attrs.update({"placeholder": "MM"})
+        self.fields["card_exp_year"].widget.attrs.update({"placeholder": "YY"})
+        self.fields["card_cvc"].widget.attrs.update({"placeholder": "CVC"})
+
+    def clean(self):
+        cleaned = super().clean()
+
+        # Shipping address required when different from billing.
+        if not cleaned.get("shipping_same_as_billing"):
+            for field in ("shipping_address", "shipping_region", "shipping_country", "shipping_postal_code"):
+                if not cleaned.get(field):
+                    self.add_error(field, "This field is required.")
+
+        # Card fields required + validated when paying by card.
+        if cleaned.get("payment_method") == "CARD":
+            number = (cleaned.get("card_number") or "").replace(" ", "")
+            month = cleaned.get("card_exp_month") or ""
+            year = cleaned.get("card_exp_year") or ""
+            cvc = cleaned.get("card_cvc") or ""
+
+            if not number:
+                self.add_error("card_number", "This field is required.")
+            elif not number.isdigit() or not (13 <= len(number) <= 19):
+                self.add_error("card_number", "Enter a valid card number.")
+
+            if not month:
+                self.add_error("card_exp_month", "This field is required.")
+            elif not (month.isdigit() and len(month) == 2 and 1 <= int(month) <= 12):
+                self.add_error("card_exp_month", "Enter a valid month (01-12).")
+
+            if not year:
+                self.add_error("card_exp_year", "This field is required.")
+            elif not (year.isdigit() and len(year) == 2):
+                self.add_error("card_exp_year", "Enter a valid year (YY).")
+
+            if not cvc:
+                self.add_error("card_cvc", "This field is required.")
+            elif not (cvc.isdigit() and 3 <= len(cvc) <= 4):
+                self.add_error("card_cvc", "Enter a valid CVC.")
+
+            # Reject already-expired cards.
+            if (month.isdigit() and year.isdigit() and len(month) == 2
+                    and len(year) == 2 and 1 <= int(month) <= 12):
+                today = datetime.date.today()
+                exp_year, exp_month = 2000 + int(year), int(month)
+                if exp_year < today.year or (exp_year == today.year and exp_month < today.month):
+                    self.add_error("card_exp_year", "This card has expired.")
+
+        return cleaned

@@ -185,14 +185,57 @@ class Order(models.Model):
         SHIPPED = 'SHIPPED', 'Shipped'
         COMPLETED = 'COMPLETED', 'Completed'
 
+    class PaymentMethod(models.TextChoices):
+        INSTORE = 'INSTORE', 'Cash/Card in-store'
+        CARD = 'CARD', 'Card'
+        APPLE_PAY = 'APPLE_PAY', 'Apple Pay'
+        GOOGLE_PAY = 'GOOGLE_PAY', 'Google Pay'
+        PAYPAL = 'PAYPAL', 'PayPal'
+        KLARNA = 'KLARNA', 'Klarna'
+        PAY_BY_BANK = 'PAY_BY_BANK', 'Pay By Bank'
+
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='orders'
     )
     date = models.DateTimeField(auto_now_add=True)
-    total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     status = models.CharField(
         max_length=20, choices=Status.choices, default=Status.PROCESSING
     )
+
+    # Contact
+    first_name = models.CharField(max_length=50, default='')
+    last_name = models.CharField(max_length=50, default='')
+    email = models.EmailField(default='')
+    phone = models.CharField(max_length=30, default='')
+
+    # Billing address
+    billing_address = models.CharField(max_length=255, default='')
+    billing_region = models.CharField(max_length=100, default='')
+    billing_country = models.CharField(max_length=100, default='')
+    billing_postal_code = models.CharField(max_length=20, default='')
+
+    # Shipping address (mirrors billing when shipping_same_as_billing is True)
+    shipping_same_as_billing = models.BooleanField(default=True)
+    shipping_address = models.CharField(max_length=255, blank=True, default='')
+    shipping_region = models.CharField(max_length=100, blank=True, default='')
+    shipping_country = models.CharField(max_length=100, blank=True, default='')
+    shipping_postal_code = models.CharField(max_length=20, blank=True, default='')
+
+    # Payment + shipping method
+    payment_method = models.CharField(
+        max_length=20, choices=PaymentMethod.choices, default=''
+    )
+    shipping_method = models.ForeignKey(
+        'ShippingMethod', on_delete=models.SET_NULL, null=True, blank=True
+    )
+    shipping_cost = models.DecimalField(max_digits=6, decimal_places=2, default=0)
+
+    # Money snapshots
+    subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
+    class Meta:
+        ordering = ['-date']
 
     def __str__(self):
         return f"Order #{self.pk} by {self.user} ({self.get_status_display()})"
