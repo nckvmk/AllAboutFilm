@@ -1,5 +1,6 @@
 {% extends "home/base.html" %}
 {% load crispy_forms_tags %}
+{% load static_extras %}
 
 {% block content %}
     {% if user.is_authenticated %}
@@ -28,11 +29,26 @@
                 <section class="account-panel p-4 rounded mb-4">
                     <h3 class="text-start">My Wishlist</h3>
                     <hr>
-                    {% if wishlist_items %}
-                        {# populated once the wishlist is built #}
-                    {% else %}
-                        <p class="text-muted mb-0">Your wishlist is empty.</p>
-                    {% endif %}
+                    <div id="wishlist-items">
+                        {% for w in wishlist_items %}
+                            <div class="wishlist-row d-flex align-items-center py-3" data-code="{{ w.product.code }}">
+                                <div class="cart-thumb me-3">
+                                    {% with img=w.product.images.first %}
+                                        {% if img %}<img src="{{ img.image.url }}" alt="{{ w.product.model }}">{% else %}<div class="no-image">&mdash;</div>{% endif %}
+                                    {% endwith %}
+                                </div>
+                                <div class="flex-grow-1 pe-2">
+                                    <div class="fw-bold">{{ w.product.manufacturer }} {{ w.product.model }}</div>
+                                    <div class="text-muted small">{{ w.product.get_category_display }}</div>
+                                </div>
+                                <div class="fw-bold me-3">&euro;{{ w.product.price|floatformat:2 }}</div>
+                                <a href="{% url 'item_detail' w.product.code %}" class="btn btn-sm btn-outline-primary me-2">View</a>
+                                <button type="button" class="btn btn-sm btn-outline-danger wishlist-remove" data-code="{{ w.product.code }}" aria-label="Remove from wishlist">&times;</button>
+                            </div>
+                        {% empty %}
+                            <p class="wishlist-empty text-muted mb-0">Your wishlist is empty.</p>
+                        {% endfor %}
+                    </div>
                 </section>
 
                 <!-- Orders -->
@@ -77,4 +93,9 @@
             </div>
         </div>
     {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static_v 'js/toast.js' %}" defer></script>
+    <script src="{% static_v 'js/wishlist.js' %}" defer></script>
 {% endblock %}

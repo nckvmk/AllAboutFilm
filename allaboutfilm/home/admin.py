@@ -3,8 +3,11 @@ from django.contrib.auth.admin import UserAdmin
 
 from .models import (
     User, Product, Camera, Lens, Film, ProductImage,
-    Cart, CartItem, Order, OrderItem, ShippingMethod,
+    Cart, CartItem, Order, OrderItem, ShippingMethod, WishlistItem,
 )
+
+
+admin.site.register(WishlistItem)
 
 
 @admin.register(User)

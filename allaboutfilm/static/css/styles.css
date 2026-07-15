@@ -840,6 +840,21 @@ footer {
     opacity: 0.65;
 }
 
+/* Wishlist button next to Add-to-cart in a product card; filled when saved. */
+.card-wishlist-btn.active {
+    background: #dc3545;
+    color: #fff;
+}
+
+/* Wishlist rows in the account page */
+.wishlist-row {
+    border-bottom: 1px solid rgba(128, 128, 128, 0.25);
+}
+
+.wishlist-row:last-child {
+    border-bottom: none;
+}
+
 /* Out-of-stock indicators */
 .out-of-stock,
 .out-of-stock-badge {

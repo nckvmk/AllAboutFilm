@@ -41,6 +41,8 @@ urlpatterns = [
     path('cart/remove/', views.remove_from_cart, name='remove_from_cart'),
     path('checkout/', views.checkout, name='checkout'),
     path('order/<int:order_id>/', views.order_confirmation, name='order_confirmation'),
+    path('wishlist/toggle/', views.toggle_wishlist, name='toggle_wishlist'),
+    path('wishlist/remove/', views.remove_from_wishlist, name='remove_from_wishlist'),
 ]
 
 # Serve user-uploaded media files during development.

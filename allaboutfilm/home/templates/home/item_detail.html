@@ -73,6 +73,12 @@
                     <p class="out-of-stock mb-3"><i class="fas fa-circle-xmark"></i> This item is no longer in stock.</p>
                 {% endif %}
 
+                <button type="button" class="btn btn-outline-danger wishlist-toggle mb-3 {% if item.code in wishlist_codes %}active{% endif %}"
+                        data-code="{{ item.code }}">
+                    <i class="{% if item.code in wishlist_codes %}fas{% else %}far{% endif %} fa-heart"></i>
+                    <span class="wishlist-label">{% if item.code in wishlist_codes %}In Wishlist{% else %}Add to Wishlist{% endif %}</span>
+                </button>
+
                 {% if item.category == 'FILM' %}
                     <p class="mb-2"><strong>ISO:</strong> {{ item.iso }}</p>
                 {% endif %}
@@ -86,4 +92,5 @@
 {% block extra_js %}
     <script src="{% static_v 'js/toast.js' %}" defer></script>
     <script src="{% static_v 'js/item.js' %}" defer></script>
+    <script src="{% static_v 'js/wishlist.js' %}" defer></script>
 {% endblock %}

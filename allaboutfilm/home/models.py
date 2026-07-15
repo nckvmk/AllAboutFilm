@@ -268,3 +268,20 @@ class ShippingMethod(models.Model):
 
     def __str__(self):
         return f"{self.name} (€{self.price})"
+
+
+class WishlistItem(models.Model):
+    """A product a user has saved to their wishlist."""
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='wishlist_items'
+    )
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    added_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = [['user', 'product']]
+        ordering = ['-added_at']
+
+    def __str__(self):
+        return f"{self.product_id} in {self.user}'s wishlist"

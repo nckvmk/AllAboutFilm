@@ -17,7 +17,7 @@ from .forms import (
 )
 from .models import (
     Product, Camera, Lens, Film, ShippingMethod, GearCondition,
-    Order, OrderItem,
+    Order, OrderItem, WishlistItem,
 )
 
 def home(request):
@@ -271,7 +271,7 @@ def _account_dashboard(request):
     return render(request, 'home/account.html', {
         'is_customer': is_customer,
         'profile_form': profile_form,
-        'wishlist_items': [],   # populated once the wishlist is built
+        'wishlist_items': WishlistItem.objects.filter(user=user).select_related('product').prefetch_related('product__images'),
         'orders': user.orders.all(),
     })
 
@@ -570,3 +570,34 @@ def order_confirmation(request, order_id):
         Order.objects.prefetch_related('items__product'), pk=order_id, user=request.user
     )
     return render(request, 'home/order_confirmation.html', {'order': order})
+
+
+# ---------------------------------------------------------------------------
+# Wishlist
+# ---------------------------------------------------------------------------
+@require_POST
+def toggle_wishlist(request):
+    if not request.user.is_authenticated:
+        return JsonResponse({
+            'ok': False, 'login_required': True,
+            'message': 'Please log in to use your wishlist.',
+        })
+    product = get_object_or_404(Product, code=request.POST.get('code'))
+    item = WishlistItem.objects.filter(user=request.user, product=product).first()
+    if item:
+        item.delete()
+        return JsonResponse({'ok': True, 'in_wishlist': False,
+                             'message': f'{product.manufacturer} {product.model} removed from your wishlist.'})
+    WishlistItem.objects.create(user=request.user, product=product)
+    return JsonResponse({'ok': True, 'in_wishlist': True,
+                         'message': f'{product.manufacturer} {product.model} added to your wishlist!'})
+
+
+@require_POST
+@login_required
+def remove_from_wishlist(request):
+    product = get_object_or_404(Product, code=request.POST.get('code'))
+    WishlistItem.objects.filter(user=request.user, product=product).delete()
+    empty = not WishlistItem.objects.filter(user=request.user).exists()
+    return JsonResponse({'ok': True, 'empty': empty,
+                         'message': f'{product.manufacturer} {product.model} removed from your wishlist.'})
