@@ -6,7 +6,7 @@ from django.contrib.auth import authenticate, login, logout, get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import Group
 from django.db import transaction
-from django.db.models import ProtectedError
+from django.db.models import ProtectedError, F
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, JsonResponse
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -17,6 +17,7 @@ from django.template.loader import render_to_string
 from .forms import (
     ContactForm, LoginForm, RegistrationForm, PasswordRecoveryForm,
     CustomerProfileForm, CheckoutForm, CameraForm, LensForm, FilmForm,
+    OrderEditForm,
 )
 from .models import (
     Product, Camera, Lens, Film, ShippingMethod, GearCondition,
@@ -232,25 +233,27 @@ def account(request):
             if user_obj is None:
                 form.add_error('username_or_email', 'The username/email provided does not exist in our records.')
                 form.add_error('password', 'The password provided does not exist in our records.')
+            elif not user_obj.check_password(password):
+                form.add_error('username_or_email', 'The username/email provided is not valid.')
+                form.add_error('password', 'The password provided is not valid.')
+            elif user_obj.is_superuser:
+                # The site admin manages everything through the Django admin
+                # interface, not the storefront login.
+                form.add_error('username_or_email', 'Administrator accounts must log in through the admin interface.')
+            elif not user_obj.is_active:
+                form.add_error('username_or_email',
+                               'Your account has been suspended. Please contact us at info@aaf.com to resolve the issue.')
             else:
                 user = authenticate(request, username=user_obj.username, password=password)
-                if user is None:
-                    form.add_error('username_or_email', 'The username/email provided is not valid.')
-                    form.add_error('password', 'The password provided is not valid.')
-                elif user.is_superuser:
-                    # The site admin manages everything through the Django admin
-                    # interface, not the storefront login.
-                    form.add_error('username_or_email', 'Administrator accounts must log in through the admin interface.')
-                else:
-                    login(request, user)
-                    # "Remember me" unchecked -> session ends when the browser closes.
-                    if not form.cleaned_data.get('remember_me'):
-                        request.session.set_expiry(0)
-                    next_url = form.cleaned_data.get('next')
-                    if next_url and url_has_allowed_host_and_scheme(
-                            next_url, allowed_hosts={request.get_host()}):
-                        return redirect(next_url)
-                    return redirect('account')
+                login(request, user)
+                # "Remember me" unchecked -> session ends when the browser closes.
+                if not form.cleaned_data.get('remember_me'):
+                    request.session.set_expiry(0)
+                next_url = form.cleaned_data.get('next')
+                if next_url and url_has_allowed_host_and_scheme(
+                        next_url, allowed_hosts={request.get_host()}):
+                    return redirect(next_url)
+                return redirect('account')
     else:
         form = LoginForm(initial={'next': request.GET.get('next', '')})
     return render(request, 'home/account.html', {'form': form})
@@ -296,6 +299,32 @@ def _inventory_context(category):
     }
 
 
+# User management: managers can moderate customers and employees.
+USER_MGMT_CONFIG = {
+    'employees': {'group': 'Employee', 'label': 'Employees'},
+    'customers': {'group': 'Customer', 'label': 'Customers'},
+}
+
+
+def _users_context(category):
+    config = USER_MGMT_CONFIG.get(category, USER_MGMT_CONFIG['employees'])
+    User = get_user_model()
+    users = User.objects.filter(groups__name=config['group']).order_by('username')
+    return {
+        'user_category': category,
+        'user_category_label': config['label'],
+        'users': users,
+    }
+
+
+def _orders_context():
+    """All placed orders, newest first, for the manager order panel."""
+    orders = (Order.objects
+              .select_related('user')
+              .prefetch_related('items'))
+    return {'all_orders': orders}
+
+
 def _account_dashboard(request):
     """The logged-in account page. Everyone gets the Account Administration
     panel; customers also see wishlist/orders, managers see inventory."""
@@ -327,6 +356,8 @@ def _account_dashboard(request):
         context['orders'] = user.orders.all()
     if is_manager:
         context.update(_inventory_context('cameras'))
+        context.update(_users_context('employees'))
+        context.update(_orders_context())
     return render(request, 'home/account.html', context)
 
 
@@ -806,3 +837,194 @@ def inventory_save(request):
         request=request,
     )
     return JsonResponse({'ok': False, 'html': html})
+
+
+# ---------------------------------------------------------------------------
+# Manager: user management (suspend / unsuspend customers & employees)
+# ---------------------------------------------------------------------------
+@login_required
+def manager_users(request):
+    """Return the users table partial for a category (AJAX)."""
+    if not _is_manager(request.user):
+        return HttpResponse(status=403)
+    category = request.GET.get('category', 'employees')
+    if category not in USER_MGMT_CONFIG:
+        category = 'employees'
+    return render(request, 'home/_users_table.html', _users_context(category))
+
+
+@require_POST
+@login_required
+def toggle_user_status(request):
+    if not _is_manager(request.user):
+        return JsonResponse({'ok': False, 'message': 'Managers only.'}, status=403)
+    User = get_user_model()
+    target = User.objects.filter(pk=request.POST.get('user_id')).first()
+    if target is None:
+        return JsonResponse({'ok': False, 'message': 'User not found.'}, status=404)
+
+    # Managers may only moderate customers/employees — not admins, other
+    # managers, or themselves.
+    groups = set(target.groups.values_list('name', flat=True))
+    if target == request.user or target.is_superuser or 'Manager' in groups:
+        return JsonResponse({'ok': False, 'message': 'You cannot change this account.'}, status=403)
+    if not (groups & {'Customer', 'Employee'}):
+        return JsonResponse({'ok': False, 'message': 'This account cannot be moderated.'}, status=400)
+
+    target.is_active = not target.is_active
+    target.save(update_fields=['is_active'])
+    status = 'reactivated' if target.is_active else 'suspended'
+    return JsonResponse({
+        'ok': True,
+        'is_active': target.is_active,
+        'message': f'{target.username} was {status}.',
+    })
+
+
+# ---------------------------------------------------------------------------
+# Manager: order management (edit items / shipping / status, or delete)
+# ---------------------------------------------------------------------------
+def _order_edit_context(order, form, error_list=None):
+    return {
+        'order': order,
+        'form': form,
+        'items': order.items.select_related('product'),
+        'products': Product.objects.order_by('code'),
+        'error_list': error_list or [],
+    }
+
+
+@login_required
+def manager_orders(request):
+    """Return the orders table partial (AJAX, used to refresh after edit/delete)."""
+    if not _is_manager(request.user):
+        return HttpResponse(status=403)
+    return render(request, 'home/_orders_table.html', _orders_context())
+
+
+@login_required
+def order_edit_form(request):
+    """Return the edit modal for a single order (AJAX)."""
+    if not _is_manager(request.user):
+        return HttpResponse(status=403)
+    order = get_object_or_404(Order, pk=request.GET.get('order_id'))
+    form = OrderEditForm(instance=order)
+    return render(request, 'home/_order_edit_form.html', _order_edit_context(order, form))
+
+
+@require_POST
+@login_required
+def order_save(request):
+    if not _is_manager(request.user):
+        return JsonResponse({'ok': False, 'message': 'Managers only.'}, status=403)
+    order = get_object_or_404(Order, pk=request.POST.get('order_id'))
+    form = OrderEditForm(request.POST, instance=order)
+
+    errors = []
+
+    # --- Existing items: a new quantity, or removal ---
+    item_actions = []  # (OrderItem, 'remove') or (OrderItem, new_quantity)
+    for item in order.items.select_related('product'):
+        label = f'{item.product.manufacturer} {item.product.model}'
+        if request.POST.get(f'remove_{item.id}'):
+            item_actions.append((item, 'remove'))
+            continue
+        raw = (request.POST.get(f'qty_{item.id}') or '').strip()
+        try:
+            new_qty = int(raw)
+        except ValueError:
+            errors.append(f'{label}: enter a valid quantity.')
+            continue
+        max_qty = item.quantity + item.product.stock
+        if new_qty < 1:
+            errors.append(f'{label}: quantity must be at least 1 (or tick Remove).')
+        elif new_qty > max_qty:
+            errors.append(f'{label}: only {max_qty} in stock.')
+        else:
+            item_actions.append((item, new_qty))
+
+    # --- New items to add ---
+    existing_codes = {i.product.code for i in order.items.all()}
+    new_adds = []  # (Product, quantity)
+    seen = set()
+    for code, raw in zip(request.POST.getlist('new_product'),
+                         request.POST.getlist('new_qty')):
+        code = (code or '').strip()
+        if not code:
+            continue
+        product = Product.objects.filter(code=code).first()
+        if product is None:
+            errors.append(f'{code}: product not found.')
+            continue
+        label = f'{product.manufacturer} {product.model}'
+        if code in existing_codes or code in seen:
+            errors.append(f'{label}: already in the order — edit its quantity above instead.')
+            continue
+        seen.add(code)
+        try:
+            qty = int((raw or '').strip())
+        except ValueError:
+            errors.append(f'{label}: enter a valid quantity.')
+            continue
+        if qty < 1:
+            errors.append(f'{label}: quantity must be at least 1.')
+        elif qty > product.stock:
+            errors.append(f'{label}: only {product.stock} in stock.')
+        else:
+            new_adds.append((product, qty))
+
+    # --- An order can't be emptied (only flag this once other item issues,
+    # which may be the real cause, are resolved) ---
+    kept = [a for a in item_actions if a[1] != 'remove']
+    if not kept and not new_adds and not errors:
+        errors.append('An order must keep at least one item.')
+
+    if form.is_valid() and not errors:
+        with transaction.atomic():
+            for item, action in item_actions:
+                if action == 'remove':
+                    Product.objects.filter(pk=item.product_id).update(stock=F('stock') + item.quantity)
+                    item.delete()
+                else:
+                    delta = action - item.quantity
+                    if delta:
+                        Product.objects.filter(pk=item.product_id).update(stock=F('stock') - delta)
+                        item.quantity = action
+                        item.save(update_fields=['quantity'])
+            for product, qty in new_adds:
+                Product.objects.filter(pk=product.pk).update(stock=F('stock') - qty)
+                OrderItem.objects.create(order=order, product=product,
+                                         quantity=qty, price_at_purchase=product.price)
+            order = form.save(commit=False)
+            subtotal = sum((i.quantity * i.price_at_purchase for i in order.items.all()), Decimal('0'))
+            order.subtotal = subtotal
+            order.total = subtotal + order.shipping_cost
+            order.save()
+        return JsonResponse({'ok': True, 'message': f'Order #{order.pk} was updated.'})
+
+    # Invalid -> mark form fields red and re-render with the error list.
+    for name in form.errors:
+        if name in form.fields:
+            widget = form.fields[name].widget
+            widget.attrs['class'] = (widget.attrs.get('class', '') + ' is-invalid').strip()
+    html = render_to_string(
+        'home/_order_edit_form.html',
+        _order_edit_context(order, form, errors),
+        request=request,
+    )
+    return JsonResponse({'ok': False, 'html': html})
+
+
+@require_POST
+@login_required
+def order_delete(request):
+    if not _is_manager(request.user):
+        return JsonResponse({'ok': False, 'message': 'Managers only.'}, status=403)
+    order = get_object_or_404(Order, pk=request.POST.get('order_id'))
+    num = order.pk
+    with transaction.atomic():
+        # Voiding the order returns its items to stock.
+        for item in order.items.select_related('product'):
+            Product.objects.filter(pk=item.product_id).update(stock=F('stock') + item.quantity)
+        order.delete()
+    return JsonResponse({'ok': True, 'message': f'Order #{num} was deleted.'})

@@ -12,7 +12,7 @@ from django.core.validators import RegexValidator, MinValueValidator, MaxValueVa
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Row, Column, Submit
 
-from .models import ShippingMethod, Camera, Lens, Film
+from .models import ShippingMethod, Camera, Lens, Film, Order
 
 User = get_user_model()
 
@@ -442,3 +442,36 @@ class FilmForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         _style_inventory_fields(self)
         self.fields['stock'].widget.attrs.update({'min': '0'})
+
+
+# ---------------------------------------------------------------------------
+# Manager order management (Edit)
+# ---------------------------------------------------------------------------
+class OrderEditForm(forms.ModelForm):
+    """Status + shipping address for the manager order editor. Items, quantities
+    and the money totals are handled separately in the view; the payment method
+    is deliberately not editable."""
+
+    class Meta:
+        model = Order
+        fields = ['status', 'shipping_address', 'shipping_region',
+                  'shipping_country', 'shipping_postal_code']
+        labels = {
+            'shipping_address': 'Address',
+            'shipping_region': 'Region',
+            'shipping_country': 'Country',
+            'shipping_postal_code': 'Postal Code',
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['shipping_postal_code'].validators.append(postal_validator)
+        for name in ('shipping_address', 'shipping_region',
+                     'shipping_country', 'shipping_postal_code'):
+            self.fields[name].required = True
+        for field in self.fields.values():
+            widget = field.widget
+            widget.attrs['class'] = 'form-select' if isinstance(widget, forms.Select) else 'form-control'
+        self.fields['shipping_postal_code'].widget.attrs.update(
+            {'inputmode': 'numeric', 'maxlength': '5', 'placeholder': '12345'}
+        )

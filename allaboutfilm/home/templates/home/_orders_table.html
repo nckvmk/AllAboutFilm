@@ -1,0 +1,43 @@
+<div class="table-responsive">
+    <table class="table inventory-table align-middle mb-0">
+        <thead>
+            <tr>
+                <th>Order #</th>
+                <th>Customer</th>
+                <th>Date</th>
+                <th>Items</th>
+                <th>Total</th>
+                <th>Status</th>
+                <th>Payment</th>
+                <th class="text-nowrap text-end">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in all_orders %}
+                <tr data-order-id="{{ order.pk }}">
+                    <td>#{{ order.pk }}</td>
+                    <td>{{ order.user.username }}</td>
+                    <td>{{ order.date|date:"d M Y" }}</td>
+                    <td>{{ order.items.count }}</td>
+                    <td>&euro;{{ order.total|floatformat:2 }}</td>
+                    <td><span class="order-status small">{{ order.get_status_display }}</span></td>
+                    <td>{{ order.get_payment_method_display }}</td>
+                    <td class="text-nowrap text-end">
+                        <button type="button" class="btn btn-sm btn-outline-secondary order-edit"
+                                data-order-id="{{ order.pk }}" title="Edit" aria-label="Edit order">
+                            <i class="fas fa-pen"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-danger order-delete"
+                                data-order-id="{{ order.pk }}" title="Delete" aria-label="Delete order">
+                            <i class="fas fa-xmark"></i>
+                        </button>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center text-muted py-4">No orders have been placed yet.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

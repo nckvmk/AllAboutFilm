@@ -852,15 +852,17 @@ footer {
     --bs-table-color: var(--text-color);
 }
 
-/* Inventory add/edit modal */
-#inventory-modal .modal-content {
+/* Inventory + order add/edit modals */
+#inventory-modal .modal-content,
+#order-modal .modal-content {
     background: var(--base-color);
     color: var(--text-color);
 }
 
 /* The form wraps header/body/footer, so it must be the flex column that fills
    the content — otherwise .modal-dialog-scrollable can't scroll the body. */
-#inventory-modal .inventory-modal-form {
+#inventory-modal .inventory-modal-form,
+#order-modal .inventory-modal-form {
     display: flex;
     flex-direction: column;
     flex: 1 1 auto;
@@ -868,16 +870,20 @@ footer {
     overflow: hidden;
 }
 
-#inventory-modal .modal-body {
+#inventory-modal .modal-body,
+#order-modal .modal-body {
     min-height: 0;
 }
 
 #inventory-modal .modal-header,
-#inventory-modal .modal-footer {
+#inventory-modal .modal-footer,
+#order-modal .modal-header,
+#order-modal .modal-footer {
     border-color: rgba(128, 128, 128, 0.25);
 }
 
-.dark-mode #inventory-modal .btn-close {
+.dark-mode #inventory-modal .btn-close,
+.dark-mode #order-modal .btn-close {
     filter: invert(1) grayscale(100%) brightness(200%);
 }
 
@@ -901,6 +907,17 @@ footer {
 
 .inventory-table .btn {
     line-height: 1;
+}
+
+/* User-management status labels */
+.status-active {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.status-suspended {
+    color: #dc3545;
+    font-weight: bold;
 }
 
 /* Wishlist rows in the account page */

@@ -100,6 +100,36 @@
                         <div class="modal-content" id="inventory-modal-content"></div>
                     </div>
                 </div>
+
+                <!-- User management -->
+                <section class="account-panel p-4 rounded mt-4">
+                    <h3 class="text-start">User Management</h3>
+                    <hr>
+                    <label for="user-category" class="form-label">Category</label>
+                    <select id="user-category" class="form-select mb-3" style="max-width: 260px;">
+                        <option value="employees" selected>Employees</option>
+                        <option value="customers">Customers</option>
+                    </select>
+                    <div id="user-table-container">
+                        {% include "home/_users_table.html" %}
+                    </div>
+                </section>
+
+                <!-- Order management -->
+                <section class="account-panel p-4 rounded mt-4">
+                    <h3 class="text-start">Order Management</h3>
+                    <hr>
+                    <div id="order-table-container">
+                        {% include "home/_orders_table.html" %}
+                    </div>
+                </section>
+
+                <!-- Order edit modal (filled via AJAX) -->
+                <div class="modal fade" id="order-modal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                        <div class="modal-content" id="order-modal-content"></div>
+                    </div>
+                </div>
             {% endif %}
 
             {% if not has_panel %}
