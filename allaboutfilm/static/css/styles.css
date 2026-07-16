@@ -846,6 +846,23 @@ footer {
     color: #fff;
 }
 
+/* Manager inventory table */
+.inventory-table {
+    --bs-table-bg: transparent;
+    --bs-table-color: var(--text-color);
+}
+
+.inventory-table th,
+.inventory-table td {
+    border-color: rgba(128, 128, 128, 0.25);
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.inventory-table .btn {
+    line-height: 1;
+}
+
 /* Wishlist rows in the account page */
 .wishlist-row {
     border-bottom: 1px solid rgba(128, 128, 128, 0.25);

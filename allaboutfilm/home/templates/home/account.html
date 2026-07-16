@@ -17,14 +17,16 @@
                 <h1 class="mb-0">Welcome, {{ user.get_full_name|default:user.username }}</h1>
             </div>
 
-            {% if is_customer %}
-                <!-- Account administration -->
+            {% if has_panel %}
+                <!-- Account administration (shared by customers and managers) -->
                 <section class="account-panel p-4 rounded mb-4">
                     <h3 class="text-start">Account Administration</h3>
                     <hr>
                     {% crispy profile_form %}
                 </section>
+            {% endif %}
 
+            {% if is_customer %}
                 <!-- Wishlist -->
                 <section class="account-panel p-4 rounded mb-4">
                     <h3 class="text-start">My Wishlist</h3>
@@ -74,7 +76,26 @@
                         <p class="text-muted mb-0">You haven't placed any orders yet.</p>
                     {% endif %}
                 </section>
-            {% else %}
+            {% endif %}
+
+            {% if is_manager %}
+                <!-- Inventory management -->
+                <section class="account-panel p-4 rounded">
+                    <h3 class="text-start">Inventory Management</h3>
+                    <hr>
+                    <label for="inventory-category" class="form-label">Category</label>
+                    <select id="inventory-category" class="form-select mb-3" style="max-width: 260px;">
+                        <option value="cameras" selected>Cameras</option>
+                        <option value="lenses">Lenses</option>
+                        <option value="film">Film</option>
+                    </select>
+                    <div id="inventory-table-container">
+                        {% include "home/_inventory_table.html" %}
+                    </div>
+                </section>
+            {% endif %}
+
+            {% if not has_panel %}
                 <section class="account-panel p-4 rounded">
                     <p class="text-muted mb-0">Your account panel is coming soon.</p>
                 </section>
@@ -98,4 +119,5 @@
 {% block extra_js %}
     <script src="{% static_v 'js/toast.js' %}" defer></script>
     <script src="{% static_v 'js/wishlist.js' %}" defer></script>
+    <script src="{% static_v 'js/manager.js' %}" defer></script>
 {% endblock %}

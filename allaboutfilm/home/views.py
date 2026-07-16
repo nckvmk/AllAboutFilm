@@ -6,6 +6,7 @@ from django.contrib.auth import authenticate, login, logout, get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import Group
 from django.db import transaction
+from django.db.models import ProtectedError
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, JsonResponse
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -251,14 +252,54 @@ def account(request):
     return render(request, 'home/account.html', {'form': form})
 
 
+# Inventory management table config, keyed by the dropdown value. `cells`
+# returns the row values in the same order as `columns`.
+INVENTORY_CONFIG = {
+    'cameras': {
+        'model': Camera,
+        'label': 'Cameras',
+        'columns': ['Code', 'Manufacturer', 'Model', 'Type', 'Serial No.', 'Condition', 'Price', 'Stock'],
+        'cells': lambda o: [o.code, o.manufacturer, o.model, o.get_type_display(),
+                            o.serial_number, o.get_condition_display(), f'€{o.price}', o.stock],
+    },
+    'lenses': {
+        'model': Lens,
+        'label': 'Lenses',
+        'columns': ['Code', 'Manufacturer', 'Model', 'Type', 'Serial No.', 'Condition', 'Price', 'Stock'],
+        'cells': lambda o: [o.code, o.manufacturer, o.model, o.get_type_display(),
+                            o.serial_number, o.get_condition_display(), f'€{o.price}', o.stock],
+    },
+    'film': {
+        'model': Film,
+        'label': 'Film',
+        'columns': ['Code', 'Manufacturer', 'Model', 'Format', 'Type', 'ISO', 'Condition', 'Price', 'Stock'],
+        'cells': lambda o: [o.code, o.manufacturer, o.model, o.get_format_display(),
+                            o.get_film_type_display(), o.iso, o.get_condition_display(), f'€{o.price}', o.stock],
+    },
+}
+
+
+def _inventory_context(category):
+    config = INVENTORY_CONFIG.get(category, INVENTORY_CONFIG['cameras'])
+    items = config['model'].objects.order_by('code')
+    return {
+        'category': category,
+        'columns': config['columns'],
+        'rows': [{'code': o.code, 'cells': config['cells'](o)} for o in items],
+    }
+
+
 def _account_dashboard(request):
-    """The logged-in account page. For now only the Customer panel exists;
-    Employee/Manager panels come later."""
+    """The logged-in account page. Everyone gets the Account Administration
+    panel; customers also see wishlist/orders, managers see inventory."""
     user = request.user
-    is_customer = user.groups.filter(name='Customer').exists()
+    groups = set(user.groups.values_list('name', flat=True))
+    is_customer = 'Customer' in groups
+    is_manager = 'Manager' in groups
+    has_panel = is_customer or is_manager
 
     profile_form = None
-    if is_customer:
+    if has_panel:
         if request.method == 'POST':
             profile_form = CustomerProfileForm(request.POST, request.FILES, instance=user)
             if profile_form.is_valid():
@@ -268,12 +309,18 @@ def _account_dashboard(request):
         else:
             profile_form = CustomerProfileForm(instance=user)
 
-    return render(request, 'home/account.html', {
+    context = {
         'is_customer': is_customer,
+        'is_manager': is_manager,
+        'has_panel': has_panel,
         'profile_form': profile_form,
-        'wishlist_items': WishlistItem.objects.filter(user=user).select_related('product').prefetch_related('product__images'),
-        'orders': user.orders.all(),
-    })
+    }
+    if is_customer:
+        context['wishlist_items'] = WishlistItem.objects.filter(user=user).select_related('product').prefetch_related('product__images')
+        context['orders'] = user.orders.all()
+    if is_manager:
+        context.update(_inventory_context('cameras'))
+    return render(request, 'home/account.html', context)
 
 
 def register(request):
@@ -601,3 +648,38 @@ def remove_from_wishlist(request):
     empty = not WishlistItem.objects.filter(user=request.user).exists()
     return JsonResponse({'ok': True, 'empty': empty,
                          'message': f'{product.manufacturer} {product.model} removed from your wishlist.'})
+
+
+# ---------------------------------------------------------------------------
+# Manager: inventory management
+# ---------------------------------------------------------------------------
+def _is_manager(user):
+    return user.groups.filter(name='Manager').exists()
+
+
+@login_required
+def manager_inventory(request):
+    """Returns the inventory table partial for the chosen category (AJAX)."""
+    if not _is_manager(request.user):
+        return HttpResponse(status=403)
+    category = request.GET.get('category', 'cameras')
+    if category not in INVENTORY_CONFIG:
+        category = 'cameras'
+    return render(request, 'home/_inventory_table.html', _inventory_context(category))
+
+
+@require_POST
+@login_required
+def delete_inventory_item(request):
+    if not _is_manager(request.user):
+        return JsonResponse({'ok': False, 'message': 'Managers only.'}, status=403)
+    product = Product.objects.filter(code=request.POST.get('code')).first()
+    if not product:
+        return JsonResponse({'ok': False, 'message': 'Item not found.'}, status=404)
+    name = f'{product.manufacturer} {product.model}'
+    try:
+        product.delete()
+    except ProtectedError:
+        return JsonResponse({'ok': False,
+                             'message': f'{name} is part of an order and cannot be deleted.'})
+    return JsonResponse({'ok': True, 'message': f'{name} was deleted.'})
