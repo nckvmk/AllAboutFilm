@@ -44,6 +44,8 @@ urlpatterns = [
     path('wishlist/toggle/', views.toggle_wishlist, name='toggle_wishlist'),
     path('wishlist/remove/', views.remove_from_wishlist, name='remove_from_wishlist'),
     path('manager/inventory/', views.manager_inventory, name='manager_inventory'),
+    path('manager/inventory/form/', views.inventory_form, name='inventory_form'),
+    path('manager/inventory/save/', views.inventory_save, name='inventory_save'),
     path('manager/inventory/delete/', views.delete_inventory_item, name='delete_inventory_item'),
 ]
 

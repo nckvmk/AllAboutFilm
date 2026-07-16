@@ -2,16 +2,17 @@
 
 import datetime
 import re
+from decimal import Decimal
 
 from django import forms
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
-from django.core.validators import RegexValidator
+from django.core.validators import RegexValidator, MinValueValidator, MaxValueValidator
 
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Row, Column, Submit
 
-from .models import ShippingMethod
+from .models import ShippingMethod, Camera, Lens, Film
 
 User = get_user_model()
 
@@ -387,3 +388,57 @@ class CheckoutForm(forms.Form):
                     self.add_error("card_exp_year", "This card has expired.")
 
         return cleaned
+
+
+# ---------------------------------------------------------------------------
+# Manager inventory forms (Add / Edit)
+# ---------------------------------------------------------------------------
+def _style_inventory_fields(form):
+    for field in form.fields.values():
+        widget = field.widget
+        widget.attrs['class'] = 'form-select' if isinstance(widget, forms.Select) else 'form-control'
+    if 'price' in form.fields:
+        form.fields['price'].validators.append(MinValueValidator(Decimal('0.01')))
+        form.fields['price'].widget.attrs.update({'min': '0.01', 'step': '0.01'})
+    if 'iso' in form.fields:
+        form.fields['iso'].validators.append(MinValueValidator(1))
+        form.fields['iso'].widget.attrs.update({'min': '1'})
+
+
+class CameraForm(forms.ModelForm):
+    class Meta:
+        model = Camera
+        fields = ['manufacturer', 'model', 'type', 'serial_number', 'condition', 'price', 'stock']
+        labels = {'serial_number': 'Serial Number'}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        _style_inventory_fields(self)
+        # Cameras are unique items: stock is 0 or 1.
+        self.fields['stock'].validators.append(MaxValueValidator(1))
+        self.fields['stock'].widget.attrs.update({'min': '0', 'max': '1'})
+
+
+class LensForm(forms.ModelForm):
+    class Meta:
+        model = Lens
+        fields = ['manufacturer', 'model', 'type', 'serial_number', 'condition', 'price', 'stock']
+        labels = {'serial_number': 'Serial Number'}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        _style_inventory_fields(self)
+        self.fields['stock'].validators.append(MaxValueValidator(1))
+        self.fields['stock'].widget.attrs.update({'min': '0', 'max': '1'})
+
+
+class FilmForm(forms.ModelForm):
+    class Meta:
+        model = Film
+        fields = ['manufacturer', 'model', 'format', 'film_type', 'iso', 'condition', 'price', 'stock']
+        labels = {'film_type': 'Type', 'iso': 'ISO'}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        _style_inventory_fields(self)
+        self.fields['stock'].widget.attrs.update({'min': '0'})

@@ -1,0 +1,39 @@
+<form id="inventory-form" class="inventory-modal-form" enctype="multipart/form-data" novalidate>
+    <div class="modal-header">
+        <h5 class="modal-title">
+            {% if mode == 'add' %}Add a New {{ category_singular }}{% else %}Edit {{ category_singular }}{% endif %}
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <div class="modal-body">
+        <input type="hidden" name="category" value="{{ category }}">
+        {% if code %}<input type="hidden" name="code" value="{{ code }}">{% endif %}
+
+        {% for field in form %}
+            {% include "home/_field.html" with field=field %}
+        {% endfor %}
+
+        <h6 class="mt-4 mb-3">Photos</h6>
+        {% for slot in slots %}
+            <div class="inv-photo-slot rounded p-3 mb-3">
+                <div class="fw-bold mb-2">Photo {{ slot.index }}{% if mode == 'add' %} *{% endif %}</div>
+                {% if slot.existing %}
+                    <img src="{{ slot.existing.image.url }}" class="inv-thumb mb-2" alt="Current photo {{ slot.index }}">
+                    <div class="text-muted small mb-2">Current photo &mdash; choose a file to replace it.</div>
+                {% endif %}
+                <input type="file" name="image_{{ slot.index }}" class="form-control mb-2" accept="image/png,image/jpeg">
+                <label class="form-label small mb-1">Alt text{% if mode == 'add' %} *{% endif %}</label>
+                <input type="text" name="alt_{{ slot.index }}" class="form-control"
+                       maxlength="120" value="{{ slot.existing.alt_text|default:'' }}"
+                       placeholder="Describe the photo">
+                {% if slot.error %}<div class="invalid-feedback d-block">{{ slot.error }}</div>{% endif %}
+            </div>
+        {% endfor %}
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary">
+            {% if mode == 'add' %}Add Item{% else %}Save Changes{% endif %}
+        </button>
+    </div>
+</form>

@@ -93,6 +93,13 @@
                         {% include "home/_inventory_table.html" %}
                     </div>
                 </section>
+
+                <!-- Add / Edit modal (filled via AJAX) -->
+                <div class="modal fade" id="inventory-modal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                        <div class="modal-content" id="inventory-modal-content"></div>
+                    </div>
+                </div>
             {% endif %}
 
             {% if not has_panel %}

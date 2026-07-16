@@ -12,14 +12,18 @@ from django.http import HttpResponse, JsonResponse
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
+from django.template.loader import render_to_string
+
 from .forms import (
     ContactForm, LoginForm, RegistrationForm, PasswordRecoveryForm,
-    CustomerProfileForm, CheckoutForm,
+    CustomerProfileForm, CheckoutForm, CameraForm, LensForm, FilmForm,
 )
 from .models import (
     Product, Camera, Lens, Film, ShippingMethod, GearCondition,
-    Order, OrderItem, WishlistItem,
+    Order, OrderItem, WishlistItem, ProductImage,
 )
+
+INVENTORY_FORMS = {'cameras': CameraForm, 'lenses': LensForm, 'film': FilmForm}
 
 def home(request):
     # "Just In" showcases the most recent camera and lens (highest code = newest).
@@ -258,6 +262,7 @@ INVENTORY_CONFIG = {
     'cameras': {
         'model': Camera,
         'label': 'Cameras',
+        'singular': 'Camera',
         'columns': ['Code', 'Manufacturer', 'Model', 'Type', 'Serial No.', 'Condition', 'Price', 'Stock'],
         'cells': lambda o: [o.code, o.manufacturer, o.model, o.get_type_display(),
                             o.serial_number, o.get_condition_display(), f'€{o.price}', o.stock],
@@ -265,6 +270,7 @@ INVENTORY_CONFIG = {
     'lenses': {
         'model': Lens,
         'label': 'Lenses',
+        'singular': 'Lens',
         'columns': ['Code', 'Manufacturer', 'Model', 'Type', 'Serial No.', 'Condition', 'Price', 'Stock'],
         'cells': lambda o: [o.code, o.manufacturer, o.model, o.get_type_display(),
                             o.serial_number, o.get_condition_display(), f'€{o.price}', o.stock],
@@ -272,6 +278,7 @@ INVENTORY_CONFIG = {
     'film': {
         'model': Film,
         'label': 'Film',
+        'singular': 'Film',
         'columns': ['Code', 'Manufacturer', 'Model', 'Format', 'Type', 'ISO', 'Condition', 'Price', 'Stock'],
         'cells': lambda o: [o.code, o.manufacturer, o.model, o.get_format_display(),
                             o.get_film_type_display(), o.iso, o.get_condition_display(), f'€{o.price}', o.stock],
@@ -683,3 +690,119 @@ def delete_inventory_item(request):
         return JsonResponse({'ok': False,
                              'message': f'{name} is part of an order and cannot be deleted.'})
     return JsonResponse({'ok': True, 'message': f'{name} was deleted.'})
+
+
+def _image_slots(instance, category, image_errors=None):
+    """Build the photo-slot list for the add/edit form (4 slots, 1 for film)."""
+    image_count = 1 if category == 'film' else 4
+    existing = list(instance.images.all()) if instance else []
+    return [{
+        'index': i + 1,
+        'existing': existing[i] if i < len(existing) else None,
+        'error': (image_errors or {}).get(i + 1),
+    } for i in range(image_count)]
+
+
+def _inventory_form_context(category, mode, code, form, instance, image_errors=None, request=None):
+    return {
+        'form': form,
+        'category': category,
+        'category_singular': INVENTORY_CONFIG[category]['singular'],
+        'mode': mode,
+        'code': code,
+        'slots': _image_slots(instance, category, image_errors),
+    }
+
+
+@login_required
+def inventory_form(request):
+    """Return the add/edit modal form for a category (AJAX)."""
+    if not _is_manager(request.user):
+        return HttpResponse(status=403)
+    category = request.GET.get('category', 'cameras')
+    if category not in INVENTORY_CONFIG:
+        category = 'cameras'
+    code = request.GET.get('code')
+    FormClass = INVENTORY_FORMS[category]
+    model = INVENTORY_CONFIG[category]['model']
+
+    if code:
+        instance = get_object_or_404(model, code=code)
+        form, mode = FormClass(instance=instance), 'edit'
+    else:
+        instance, form, mode = None, FormClass(), 'add'
+
+    return render(request, 'home/_inventory_form.html',
+                  _inventory_form_context(category, mode, code, form, instance))
+
+
+@require_POST
+@login_required
+def inventory_save(request):
+    if not _is_manager(request.user):
+        return JsonResponse({'ok': False, 'message': 'Managers only.'}, status=403)
+    category = request.POST.get('category')
+    if category not in INVENTORY_CONFIG:
+        return JsonResponse({'ok': False, 'message': 'Invalid category.'}, status=400)
+
+    code = request.POST.get('code')
+    FormClass = INVENTORY_FORMS[category]
+    model = INVENTORY_CONFIG[category]['model']
+    image_count = 1 if category == 'film' else 4
+
+    if code:
+        instance = get_object_or_404(model, code=code)
+        form, mode = FormClass(request.POST, instance=instance), 'edit'
+    else:
+        instance, form, mode = None, FormClass(request.POST), 'add'
+
+    existing = list(instance.images.all()) if instance else []
+
+    # Validate the photo slots.
+    image_errors = {}
+    for i in range(image_count):
+        idx = i + 1
+        file = request.FILES.get(f'image_{idx}')
+        alt = (request.POST.get(f'alt_{idx}') or '').strip()
+        has_existing = i < len(existing)
+        problems = []
+        if not file and not has_existing:
+            problems.append('a photo')
+        elif file and file.content_type not in ('image/jpeg', 'image/png'):
+            problems.append('a JPG or PNG photo')
+        if not alt:
+            problems.append('alt text')
+        if problems:
+            image_errors[idx] = 'Please provide ' + ' and '.join(problems) + '.'
+
+    if form.is_valid() and not image_errors:
+        with transaction.atomic():
+            obj = form.save()
+            product = obj.product_ptr
+            current = list(obj.images.all())
+            for i in range(image_count):
+                idx = i + 1
+                file = request.FILES.get(f'image_{idx}')
+                alt = (request.POST.get(f'alt_{idx}') or '').strip()
+                if i < len(current):
+                    img = current[i]
+                    if file:
+                        img.image = file
+                    img.alt_text, img.position = alt, i
+                    img.save()
+                else:
+                    ProductImage.objects.create(product=product, image=file, alt_text=alt, position=i)
+        verb = 'added' if mode == 'add' else 'updated'
+        return JsonResponse({'ok': True, 'message': f'{obj.manufacturer} {obj.model} was {verb} successfully.'})
+
+    # Invalid -> mark fields red and re-render the form with errors.
+    for name in form.errors:
+        if name in form.fields:
+            widget = form.fields[name].widget
+            widget.attrs['class'] = (widget.attrs.get('class', '') + ' is-invalid').strip()
+    html = render_to_string(
+        'home/_inventory_form.html',
+        _inventory_form_context(category, mode, code, form, instance, image_errors),
+        request=request,
+    )
+    return JsonResponse({'ok': False, 'html': html})
