@@ -858,6 +858,20 @@ footer {
     color: var(--text-color);
 }
 
+/* The form wraps header/body/footer, so it must be the flex column that fills
+   the content — otherwise .modal-dialog-scrollable can't scroll the body. */
+#inventory-modal .inventory-modal-form {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+}
+
+#inventory-modal .modal-body {
+    min-height: 0;
+}
+
 #inventory-modal .modal-header,
 #inventory-modal .modal-footer {
     border-color: rgba(128, 128, 128, 0.25);
