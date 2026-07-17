@@ -1,0 +1,11 @@
+{% extends "home/_error_base.html" %}
+
+{% block error_code %}403{% endblock %}
+{% block error_title %}Access Denied{% endblock %}
+{% block error_message %}
+    You don't have permission to view this page. If you think you should have
+    access, please get in touch with a member of staff.
+{% endblock %}
+{% block error_extra_links %}
+    <a href="{% url 'account' %}" class="btn btn-outline-secondary">My Account</a>
+{% endblock %}

@@ -15,9 +15,10 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.conf import settings
-from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import path
+from django.contrib.staticfiles.views import serve as staticfiles_serve
+from django.urls import path, re_path
+from django.views.static import serve as static_serve
 from home import views
 
 urlpatterns = [
@@ -60,6 +61,19 @@ urlpatterns = [
     path('manager/orders/delete/', views.order_delete, name='order_delete'),
 ]
 
-# Serve user-uploaded media files during development.
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Serve user-uploaded media (product photos, avatars) from the dev server. This
+# is deliberately not gated on DEBUG: the django.conf.urls.static helper silently
+# does nothing when DEBUG is off, which would leave the site imageless whenever
+# it runs with DEBUG=False. A real deployment would serve /media/ from the web
+# server (nginx/Apache) rather than from Django.
+urlpatterns += [
+    re_path(r'^media/(?P<path>.*)$', static_serve, {'document_root': settings.MEDIA_ROOT}),
+]
+
+# runserver only auto-serves /static/ while DEBUG is on, and DEBUG is off by
+# default here, so serve it explicitly through the staticfiles finders. Same
+# caveat as above: a real deployment would hand /static/ to the web server.
+if not settings.DEBUG:
+    urlpatterns += [
+        re_path(r'^static/(?P<path>.*)$', staticfiles_serve, {'insecure': True}),
+    ]

@@ -1,0 +1,12 @@
+{% extends "home/_error_base.html" %}
+
+{% block error_code %}404{% endblock %}
+{% block error_title %}Page Not Found{% endblock %}
+{% block error_message %}
+    The page you are looking for doesn't exist. It may have been moved or removed,
+    or the address might have been mistyped.
+{% endblock %}
+{% block error_extra_links %}
+    <a href="{% url 'cameras' %}" class="btn btn-outline-secondary">Browse Cameras</a>
+    <a href="{% url 'contact' %}" class="btn btn-outline-secondary">Contact Us</a>
+{% endblock %}

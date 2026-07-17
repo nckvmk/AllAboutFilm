@@ -1,0 +1,21 @@
+{% extends "home/base.html" %}
+
+{% comment %}
+Shared layout for the friendly error pages (404 / 500 / 403 / 400). These render
+instead of Django's technical error page, which must never be shown to visitors
+because it exposes the URL configuration, settings and tracebacks.
+{% endcomment %}
+
+{% block content %}
+    <div class="container py-5">
+        <div class="error-page text-center mx-auto py-5">
+            <div class="error-code">{% block error_code %}{% endblock %}</div>
+            <h1 class="mb-3">{% block error_title %}{% endblock %}</h1>
+            <p class="error-message mb-4">{% block error_message %}{% endblock %}</p>
+            <div class="d-flex gap-2 justify-content-center flex-wrap">
+                <a href="{% url 'welcome' %}" class="btn btn-primary">Back to Home</a>
+                {% block error_extra_links %}{% endblock %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

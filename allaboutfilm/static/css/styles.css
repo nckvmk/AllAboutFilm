@@ -852,6 +852,25 @@ footer {
     --bs-table-color: var(--text-color);
 }
 
+/* Friendly error pages (404 / 500 / 403 / 400) */
+.error-page {
+    max-width: 640px;
+}
+
+.error-code {
+    font-family: "Special Gothic Expanded One", sans-serif, Arial;
+    font-size: clamp(4rem, 12vw, 7rem);
+    font-weight: 700;
+    line-height: 1;
+    color: var(--text-color);
+    opacity: 0.35;
+}
+
+.error-message {
+    color: var(--text-color);
+    opacity: 0.75;
+}
+
 /* Inventory + order + report modals */
 #inventory-modal .modal-content,
 #order-modal .modal-content,

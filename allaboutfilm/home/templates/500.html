@@ -1,0 +1,11 @@
+{% extends "home/_error_base.html" %}
+
+{% block error_code %}500{% endblock %}
+{% block error_title %}Something Went Wrong{% endblock %}
+{% block error_message %}
+    An unexpected error occurred on our end. Nothing is wrong with your account &mdash;
+    please try again in a moment, and let us know if it keeps happening.
+{% endblock %}
+{% block error_extra_links %}
+    <a href="{% url 'contact' %}" class="btn btn-outline-secondary">Contact Us</a>
+{% endblock %}
