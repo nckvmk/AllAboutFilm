@@ -1,0 +1,24 @@
+<div class="modal-header">
+    <h5 class="modal-title">Reports for {{ target.username }}</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+</div>
+<div class="modal-body">
+    {% for r in reports %}
+        <div class="report-entry">
+            <div class="text-muted small mb-1">
+                Reported by <strong>{{ r.reported_by.username|default:"a removed account" }}</strong>
+                on {{ r.created_at|date:"d M Y, H:i" }}
+            </div>
+            {% if r.reason %}
+                <p class="mb-0">{{ r.reason }}</p>
+            {% else %}
+                <p class="mb-0 text-muted fst-italic">No reason was given.</p>
+            {% endif %}
+        </div>
+    {% empty %}
+        <p class="text-muted mb-0">There are no pending reports for this customer.</p>
+    {% endfor %}
+</div>
+<div class="modal-footer">
+    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+</div>

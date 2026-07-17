@@ -147,6 +147,20 @@ $(function () {
         });
     });
 
+    // ---- Manager: view a customer's pending reports ----
+    var reportsModalEl = document.querySelector('#reports-modal');
+    var reportsModal = reportsModalEl ? bootstrap.Modal.getOrCreateInstance(reportsModalEl) : null;
+    var $reportsModalContent = $('#reports-modal-content');
+
+    $userContainer.on('click', '.report-view', function () {
+        $.get('/manager/users/reports/view/', { user_id: $(this).data('user-id') }).done(function (html) {
+            $reportsModalContent.html(html);
+            reportsModal.show();
+        }).fail(function () {
+            window.showToast('Could not load the reports.', 'error');
+        });
+    });
+
     // ---- Manager: dismiss a customer's pending reports ----
     $userContainer.on('click', '.report-dismiss', function () {
         var id = $(this).data('user-id');

@@ -122,6 +122,15 @@
                     </div>
                 </section>
 
+                {% if is_manager %}
+                    <!-- View-reports popup (filled via AJAX) -->
+                    <div class="modal fade" id="reports-modal" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-scrollable">
+                            <div class="modal-content" id="reports-modal-content"></div>
+                        </div>
+                    </div>
+                {% endif %}
+
                 {% if is_employee %}
                     <!-- Report-customer modal -->
                     <div class="modal fade" id="report-modal" tabindex="-1" aria-hidden="true">

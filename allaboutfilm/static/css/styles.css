@@ -855,9 +855,17 @@ footer {
 /* Inventory + order + report modals */
 #inventory-modal .modal-content,
 #order-modal .modal-content,
-#report-modal .modal-content {
+#report-modal .modal-content,
+#reports-modal .modal-content {
     background: var(--base-color);
     color: var(--text-color);
+}
+
+/* One report inside the View-reports popup */
+.report-entry + .report-entry {
+    border-top: 1px solid rgba(128, 128, 128, 0.25);
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
 }
 
 /* The form wraps header/body/footer, so it must be the flex column that fills
@@ -881,13 +889,16 @@ footer {
 #order-modal .modal-header,
 #order-modal .modal-footer,
 #report-modal .modal-header,
-#report-modal .modal-footer {
+#report-modal .modal-footer,
+#reports-modal .modal-header,
+#reports-modal .modal-footer {
     border-color: rgba(128, 128, 128, 0.25);
 }
 
 .dark-mode #inventory-modal .btn-close,
 .dark-mode #order-modal .btn-close,
-.dark-mode #report-modal .btn-close {
+.dark-mode #report-modal .btn-close,
+.dark-mode #reports-modal .btn-close {
     filter: invert(1) grayscale(100%) brightness(200%);
 }
 

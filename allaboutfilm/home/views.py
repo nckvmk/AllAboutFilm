@@ -960,6 +960,19 @@ def report_customer(request):
     })
 
 
+@login_required
+def view_reports(request):
+    """Manager: the pending reports for a customer, rendered for the popup."""
+    if not _is_manager(request.user):
+        return HttpResponse(status=403)
+    User = get_user_model()
+    target = get_object_or_404(User, pk=request.GET.get('user_id'))
+    reports = (CustomerReport.objects
+               .filter(customer=target, resolved=False)
+               .select_related('reported_by'))
+    return render(request, 'home/_reports_list.html', {'target': target, 'reports': reports})
+
+
 @require_POST
 @login_required
 def resolve_reports(request):

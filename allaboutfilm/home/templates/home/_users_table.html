@@ -30,6 +30,8 @@
                             {% if u.pending_reports %}
                                 <span class="badge bg-warning text-dark report-count">{{ u.pending_reports }}</span>
                                 {% if is_manager %}
+                                    <button type="button" class="btn btn-sm btn-link p-0 ms-1 report-view"
+                                            data-user-id="{{ u.id }}">View</button>
                                     <button type="button" class="btn btn-sm btn-link p-0 ms-1 report-dismiss"
                                             data-user-id="{{ u.id }}">Dismiss</button>
                                 {% endif %}

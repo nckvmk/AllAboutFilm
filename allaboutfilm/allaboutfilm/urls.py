@@ -52,6 +52,7 @@ urlpatterns = [
     path('manager/users/', views.manager_users, name='manager_users'),
     path('manager/users/toggle/', views.toggle_user_status, name='toggle_user_status'),
     path('manager/users/report/', views.report_customer, name='report_customer'),
+    path('manager/users/reports/view/', views.view_reports, name='view_reports'),
     path('manager/users/reports/resolve/', views.resolve_reports, name='resolve_reports'),
     path('manager/orders/', views.manager_orders, name='manager_orders'),
     path('manager/orders/form/', views.order_edit_form, name='order_edit_form'),
