@@ -852,9 +852,10 @@ footer {
     --bs-table-color: var(--text-color);
 }
 
-/* Inventory + order add/edit modals */
+/* Inventory + order + report modals */
 #inventory-modal .modal-content,
-#order-modal .modal-content {
+#order-modal .modal-content,
+#report-modal .modal-content {
     background: var(--base-color);
     color: var(--text-color);
 }
@@ -878,12 +879,15 @@ footer {
 #inventory-modal .modal-header,
 #inventory-modal .modal-footer,
 #order-modal .modal-header,
-#order-modal .modal-footer {
+#order-modal .modal-footer,
+#report-modal .modal-header,
+#report-modal .modal-footer {
     border-color: rgba(128, 128, 128, 0.25);
 }
 
 .dark-mode #inventory-modal .btn-close,
-.dark-mode #order-modal .btn-close {
+.dark-mode #order-modal .btn-close,
+.dark-mode #report-modal .btn-close {
     filter: invert(1) grayscale(100%) brightness(200%);
 }
 

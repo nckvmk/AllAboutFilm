@@ -285,3 +285,25 @@ class WishlistItem(models.Model):
 
     def __str__(self):
         return f"{self.product_id} in {self.user}'s wishlist"
+
+
+class CustomerReport(models.Model):
+    """An employee flags a customer for the manager's attention. Managers act on
+    it (e.g. suspend) and then dismiss it (resolved=True)."""
+
+    customer = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='reports_received'
+    )
+    reported_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,
+        related_name='reports_made'
+    )
+    reason = models.CharField(max_length=300, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    resolved = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Report on {self.customer} ({'resolved' if self.resolved else 'pending'})"

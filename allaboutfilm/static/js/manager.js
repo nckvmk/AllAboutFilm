@@ -69,6 +69,42 @@ $(function () {
         });
     });
 
+    // ---- Employee: edit stock only (reuses the inventory modal) ----
+    $container.on('click', '.inventory-stock', function () {
+        $.get('/manager/inventory/stock/', { code: $(this).data('code') }).done(function (html) {
+            $modalContent.html(html);
+            modal.show();
+        }).fail(function () {
+            window.showToast('Could not open the stock editor.', 'error');
+        });
+    });
+
+    $modalContent.on('submit', '#stock-form', function (e) {
+        e.preventDefault();
+        var $submit = $(this).find('button[type="submit"]').prop('disabled', true);
+        $.ajax({
+            url: '/manager/inventory/stock/save/',
+            method: 'POST',
+            headers: { 'X-CSRFToken': window.getCsrfToken() },
+            data: $(this).serialize(),
+            dataType: 'json'
+        }).done(function (res) {
+            if (res.ok) {
+                modal.hide();
+                window.showToast(res.message);
+                reloadTable();
+            } else if (res.html) {
+                $modalContent.html(res.html);
+            } else {
+                window.showToast(res.message || 'Save failed.', 'error');
+                $submit.prop('disabled', false);
+            }
+        }).fail(function () {
+            window.showToast('Save failed. Please try again.', 'error');
+            $submit.prop('disabled', false);
+        });
+    });
+
     // =====================================================================
     // User management
     // =====================================================================
@@ -108,6 +144,62 @@ $(function () {
             window.showToast('Could not update the account.', 'error');
         }).always(function () {
             $btn.removeClass('user-busy');
+        });
+    });
+
+    // ---- Manager: dismiss a customer's pending reports ----
+    $userContainer.on('click', '.report-dismiss', function () {
+        var id = $(this).data('user-id');
+        $.ajax({
+            url: '/manager/users/reports/resolve/',
+            method: 'POST',
+            headers: { 'X-CSRFToken': window.getCsrfToken() },
+            data: { user_id: id },
+            dataType: 'json'
+        }).done(function (res) {
+            if (res.ok) {
+                $userContainer.find('tr[data-user-id="' + id + '"] .user-reports')
+                    .html('<span class="text-muted">&mdash;</span>');
+            }
+            window.showToast(res.message, res.ok ? 'success' : 'error');
+        }).fail(function () {
+            window.showToast('Could not dismiss the reports.', 'error');
+        });
+    });
+
+    // ---- Employee: report a customer to the manager ----
+    var reportModalEl = document.querySelector('#report-modal');
+    var reportModal = reportModalEl ? bootstrap.Modal.getOrCreateInstance(reportModalEl) : null;
+    var reportUserId = null;
+
+    $userContainer.on('click', '.user-report-btn', function () {
+        reportUserId = $(this).data('user-id');
+        $('#report-username').text($(this).data('username'));
+        $('#report-reason').val('');
+        reportModal.show();
+    });
+
+    $('#report-submit').on('click', function () {
+        var $btn = $(this).prop('disabled', true);
+        $.ajax({
+            url: '/manager/users/report/',
+            method: 'POST',
+            headers: { 'X-CSRFToken': window.getCsrfToken() },
+            data: { user_id: reportUserId, reason: $('#report-reason').val() },
+            dataType: 'json'
+        }).done(function (res) {
+            if (res.ok) {
+                reportModal.hide();
+                var $cell = $userContainer.find('tr[data-user-id="' + reportUserId + '"] .user-reports');
+                if ($cell.length) {
+                    $cell.html('<span class="badge bg-warning text-dark report-count">' + res.pending + '</span>');
+                }
+            }
+            window.showToast(res.message, res.ok ? 'success' : 'error');
+        }).fail(function () {
+            window.showToast('Could not submit the report.', 'error');
+        }).always(function () {
+            $btn.prop('disabled', false);
         });
     });
 

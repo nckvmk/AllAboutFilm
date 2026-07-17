@@ -78,11 +78,14 @@
                 </section>
             {% endif %}
 
-            {% if is_manager %}
+            {% if is_staff_member %}
                 <!-- Inventory management -->
                 <section class="account-panel p-4 rounded">
                     <h3 class="text-start">Inventory Management</h3>
                     <hr>
+                    {% if is_employee %}
+                        <p class="text-muted small">You can adjust stock quantities. Contact a manager to add, edit or remove items.</p>
+                    {% endif %}
                     <label for="inventory-category" class="form-label">Category</label>
                     <select id="inventory-category" class="form-select mb-3" style="max-width: 260px;">
                         <option value="cameras" selected>Cameras</option>
@@ -94,7 +97,7 @@
                     </div>
                 </section>
 
-                <!-- Add / Edit modal (filled via AJAX) -->
+                <!-- Add / Edit / stock modal (filled via AJAX) -->
                 <div class="modal fade" id="inventory-modal" tabindex="-1" aria-hidden="true">
                     <div class="modal-dialog modal-lg modal-dialog-scrollable">
                         <div class="modal-content" id="inventory-modal-content"></div>
@@ -105,15 +108,43 @@
                 <section class="account-panel p-4 rounded mt-4">
                     <h3 class="text-start">User Management</h3>
                     <hr>
-                    <label for="user-category" class="form-label">Category</label>
-                    <select id="user-category" class="form-select mb-3" style="max-width: 260px;">
-                        <option value="employees" selected>Employees</option>
-                        <option value="customers">Customers</option>
-                    </select>
+                    {% if is_manager %}
+                        <label for="user-category" class="form-label">Category</label>
+                        <select id="user-category" class="form-select mb-3" style="max-width: 260px;">
+                            <option value="employees" selected>Employees</option>
+                            <option value="customers">Customers</option>
+                        </select>
+                    {% else %}
+                        <p class="text-muted small">Report customers who break the rules so a manager can review them.</p>
+                    {% endif %}
                     <div id="user-table-container">
                         {% include "home/_users_table.html" %}
                     </div>
                 </section>
+
+                {% if is_employee %}
+                    <!-- Report-customer modal -->
+                    <div class="modal fade" id="report-modal" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Report Customer</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p class="mb-2">Report <strong id="report-username"></strong> to the manager.</p>
+                                    <label for="report-reason" class="form-label">Reason <span class="text-muted">(optional)</span></label>
+                                    <textarea id="report-reason" class="form-control" rows="3" maxlength="300"
+                                              placeholder="Why are you reporting this customer?"></textarea>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                    <button type="button" class="btn btn-warning" id="report-submit">Report</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
 
                 <!-- Order management -->
                 <section class="account-panel p-4 rounded mt-4">

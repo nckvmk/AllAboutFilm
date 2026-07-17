@@ -6,7 +6,7 @@ from django.contrib.auth import authenticate, login, logout, get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import Group
 from django.db import transaction
-from django.db.models import ProtectedError, F
+from django.db.models import ProtectedError, F, Count, Q
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, JsonResponse
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -21,7 +21,7 @@ from .forms import (
 )
 from .models import (
     Product, Camera, Lens, Film, ShippingMethod, GearCondition,
-    Order, OrderItem, WishlistItem, ProductImage,
+    Order, OrderItem, WishlistItem, ProductImage, CustomerReport,
 )
 
 INVENTORY_FORMS = {'cameras': CameraForm, 'lenses': LensForm, 'film': FilmForm}
@@ -309,7 +309,11 @@ USER_MGMT_CONFIG = {
 def _users_context(category):
     config = USER_MGMT_CONFIG.get(category, USER_MGMT_CONFIG['employees'])
     User = get_user_model()
-    users = User.objects.filter(groups__name=config['group']).order_by('username')
+    users = (User.objects
+             .filter(groups__name=config['group'])
+             .annotate(pending_reports=Count(
+                 'reports_received', filter=Q(reports_received__resolved=False)))
+             .order_by('username'))
     return {
         'user_category': category,
         'user_category_label': config['label'],
@@ -327,12 +331,15 @@ def _orders_context():
 
 def _account_dashboard(request):
     """The logged-in account page. Everyone gets the Account Administration
-    panel; customers also see wishlist/orders, managers see inventory."""
+    panel; customers also see wishlist/orders. Managers and employees share the
+    inventory / users / orders panels but with different permissions."""
     user = request.user
     groups = set(user.groups.values_list('name', flat=True))
     is_customer = 'Customer' in groups
     is_manager = 'Manager' in groups
-    has_panel = is_customer or is_manager
+    is_employee = 'Employee' in groups and not is_manager
+    is_staff_member = is_manager or is_employee
+    has_panel = is_customer or is_staff_member
 
     profile_form = None
     if has_panel:
@@ -348,15 +355,18 @@ def _account_dashboard(request):
     context = {
         'is_customer': is_customer,
         'is_manager': is_manager,
+        'is_employee': is_employee,
+        'is_staff_member': is_staff_member,
         'has_panel': has_panel,
         'profile_form': profile_form,
     }
     if is_customer:
         context['wishlist_items'] = WishlistItem.objects.filter(user=user).select_related('product').prefetch_related('product__images')
         context['orders'] = user.orders.all()
-    if is_manager:
+    if is_staff_member:
         context.update(_inventory_context('cameras'))
-        context.update(_users_context('employees'))
+        # Managers moderate employees by default; employees only see customers.
+        context.update(_users_context('employees' if is_manager else 'customers'))
         context.update(_orders_context())
     return render(request, 'home/account.html', context)
 
@@ -689,21 +699,89 @@ def remove_from_wishlist(request):
 
 
 # ---------------------------------------------------------------------------
-# Manager: inventory management
+# Manager / employee: shared staff panels
 # ---------------------------------------------------------------------------
 def _is_manager(user):
     return user.groups.filter(name='Manager').exists()
 
 
+def _is_employee(user):
+    return user.groups.filter(name='Employee').exists()
+
+
+def _is_staff_member(user):
+    """A manager or an employee — the two roles that share the staff panels."""
+    return user.groups.filter(name__in=['Manager', 'Employee']).exists()
+
+
+def _role_flags(user):
+    """Role flags for partials rendered over AJAX (managers and employees see the
+    same tables but with different actions)."""
+    is_manager = _is_manager(user)
+    return {'is_manager': is_manager, 'is_employee': _is_employee(user) and not is_manager}
+
+
 @login_required
 def manager_inventory(request):
     """Returns the inventory table partial for the chosen category (AJAX)."""
-    if not _is_manager(request.user):
+    if not _is_staff_member(request.user):
         return HttpResponse(status=403)
     category = request.GET.get('category', 'cameras')
     if category not in INVENTORY_CONFIG:
         category = 'cameras'
-    return render(request, 'home/_inventory_table.html', _inventory_context(category))
+    return render(request, 'home/_inventory_table.html',
+                  {**_inventory_context(category), **_role_flags(request.user)})
+
+
+def _stock_form_context(product, error=None):
+    is_unique = product.category in (Product.Category.CAMERA, Product.Category.LENS)
+    return {
+        'product': product,
+        'is_unique': is_unique,
+        'max_stock': 1 if is_unique else None,
+        'error': error,
+    }
+
+
+@login_required
+def stock_form(request):
+    """Minimal stock-only edit modal (employees may only change stock)."""
+    if not _is_staff_member(request.user):
+        return HttpResponse(status=403)
+    product = get_object_or_404(Product, code=request.GET.get('code'))
+    return render(request, 'home/_stock_form.html', _stock_form_context(product))
+
+
+@require_POST
+@login_required
+def update_stock(request):
+    if not _is_staff_member(request.user):
+        return JsonResponse({'ok': False, 'message': 'Staff only.'}, status=403)
+    product = get_object_or_404(Product, code=request.POST.get('code'))
+    is_unique = product.category in (Product.Category.CAMERA, Product.Category.LENS)
+
+    error = None
+    try:
+        stock = int((request.POST.get('stock') or '').strip())
+    except ValueError:
+        error = 'Enter a whole number.'
+    else:
+        if stock < 0:
+            error = 'Stock cannot be negative.'
+        elif is_unique and stock > 1:
+            error = 'Cameras and lenses are unique items: stock can only be 0 or 1.'
+
+    if error:
+        html = render_to_string('home/_stock_form.html',
+                                _stock_form_context(product, error), request=request)
+        return JsonResponse({'ok': False, 'html': html})
+
+    product.stock = stock
+    product.save(update_fields=['stock'])
+    return JsonResponse({
+        'ok': True,
+        'message': f'{product.manufacturer} {product.model} stock set to {stock}.',
+    })
 
 
 @require_POST
@@ -840,17 +918,63 @@ def inventory_save(request):
 
 
 # ---------------------------------------------------------------------------
-# Manager: user management (suspend / unsuspend customers & employees)
+# User management. Managers suspend/unsuspend customers & employees; employees
+# only view customers and report them to the manager.
 # ---------------------------------------------------------------------------
 @login_required
 def manager_users(request):
     """Return the users table partial for a category (AJAX)."""
-    if not _is_manager(request.user):
+    if not _is_staff_member(request.user):
         return HttpResponse(status=403)
     category = request.GET.get('category', 'employees')
+    # Employees may only ever see customers.
+    if _is_employee(request.user) and not _is_manager(request.user):
+        category = 'customers'
     if category not in USER_MGMT_CONFIG:
-        category = 'employees'
-    return render(request, 'home/_users_table.html', _users_context(category))
+        category = 'customers'
+    return render(request, 'home/_users_table.html',
+                  {**_users_context(category), **_role_flags(request.user)})
+
+
+@require_POST
+@login_required
+def report_customer(request):
+    """An employee (or manager) flags a customer for the manager's attention."""
+    if not _is_staff_member(request.user):
+        return JsonResponse({'ok': False, 'message': 'Staff only.'}, status=403)
+    User = get_user_model()
+    target = User.objects.filter(pk=request.POST.get('user_id')).first()
+    if target is None:
+        return JsonResponse({'ok': False, 'message': 'User not found.'}, status=404)
+    groups = set(target.groups.values_list('name', flat=True))
+    if 'Customer' not in groups or target.is_superuser:
+        return JsonResponse({'ok': False, 'message': 'Only customers can be reported.'}, status=400)
+
+    reason = (request.POST.get('reason') or '').strip()[:300]
+    CustomerReport.objects.create(customer=target, reported_by=request.user, reason=reason)
+    pending = CustomerReport.objects.filter(customer=target, resolved=False).count()
+    return JsonResponse({
+        'ok': True,
+        'pending': pending,
+        'message': f'{target.username} was reported to the manager.',
+    })
+
+
+@require_POST
+@login_required
+def resolve_reports(request):
+    """Manager dismisses all pending reports for a customer."""
+    if not _is_manager(request.user):
+        return JsonResponse({'ok': False, 'message': 'Managers only.'}, status=403)
+    User = get_user_model()
+    target = User.objects.filter(pk=request.POST.get('user_id')).first()
+    if target is None:
+        return JsonResponse({'ok': False, 'message': 'User not found.'}, status=404)
+    count = CustomerReport.objects.filter(customer=target, resolved=False).update(resolved=True)
+    return JsonResponse({
+        'ok': True,
+        'message': f'Dismissed {count} report{"" if count == 1 else "s"} for {target.username}.',
+    })
 
 
 @require_POST
@@ -897,7 +1021,7 @@ def _order_edit_context(order, form, error_list=None):
 @login_required
 def manager_orders(request):
     """Return the orders table partial (AJAX, used to refresh after edit/delete)."""
-    if not _is_manager(request.user):
+    if not _is_staff_member(request.user):
         return HttpResponse(status=403)
     return render(request, 'home/_orders_table.html', _orders_context())
 
@@ -905,7 +1029,7 @@ def manager_orders(request):
 @login_required
 def order_edit_form(request):
     """Return the edit modal for a single order (AJAX)."""
-    if not _is_manager(request.user):
+    if not _is_staff_member(request.user):
         return HttpResponse(status=403)
     order = get_object_or_404(Order, pk=request.GET.get('order_id'))
     form = OrderEditForm(instance=order)
@@ -915,8 +1039,8 @@ def order_edit_form(request):
 @require_POST
 @login_required
 def order_save(request):
-    if not _is_manager(request.user):
-        return JsonResponse({'ok': False, 'message': 'Managers only.'}, status=403)
+    if not _is_staff_member(request.user):
+        return JsonResponse({'ok': False, 'message': 'Staff only.'}, status=403)
     order = get_object_or_404(Order, pk=request.POST.get('order_id'))
     form = OrderEditForm(request.POST, instance=order)
 
@@ -1018,8 +1142,8 @@ def order_save(request):
 @require_POST
 @login_required
 def order_delete(request):
-    if not _is_manager(request.user):
-        return JsonResponse({'ok': False, 'message': 'Managers only.'}, status=403)
+    if not _is_staff_member(request.user):
+        return JsonResponse({'ok': False, 'message': 'Staff only.'}, status=403)
     order = get_object_or_404(Order, pk=request.POST.get('order_id'))
     num = order.pk
     with transaction.atomic():

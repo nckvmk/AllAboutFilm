@@ -1,0 +1,27 @@
+<form id="stock-form" class="inventory-modal-form" novalidate>
+    <div class="modal-header">
+        <h5 class="modal-title">Update Stock</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <div class="modal-body">
+        <input type="hidden" name="code" value="{{ product.code }}">
+        <p class="mb-3">
+            <strong>{{ product.manufacturer }} {{ product.model }}</strong>
+            <span class="text-muted">({{ product.code }})</span>
+        </p>
+        <div class="mb-2">
+            <label for="stock-input" class="form-label">Stock *</label>
+            <input type="number" id="stock-input" name="stock" value="{{ product.stock }}"
+                   min="0" {% if max_stock %}max="{{ max_stock }}"{% endif %}
+                   class="form-control{% if error %} is-invalid{% endif %}">
+            {% if error %}<div class="invalid-feedback d-block">{{ error }}</div>{% endif %}
+        </div>
+        {% if is_unique %}
+            <div class="form-text">Cameras and lenses are unique items &mdash; stock can only be 0 or 1.</div>
+        {% endif %}
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Stock</button>
+    </div>
+</form>

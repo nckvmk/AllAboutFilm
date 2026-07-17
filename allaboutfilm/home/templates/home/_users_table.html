@@ -7,6 +7,7 @@
                 <th>Last Name</th>
                 <th>Email</th>
                 <th>Status</th>
+                {% if user_category == 'customers' %}<th>Reports</th>{% endif %}
                 <th class="text-end">Action</th>
             </tr>
         </thead>
@@ -24,17 +25,38 @@
                             <span class="status-suspended">Suspended</span>
                         {% endif %}
                     </td>
+                    {% if user_category == 'customers' %}
+                        <td class="user-reports">
+                            {% if u.pending_reports %}
+                                <span class="badge bg-warning text-dark report-count">{{ u.pending_reports }}</span>
+                                {% if is_manager %}
+                                    <button type="button" class="btn btn-sm btn-link p-0 ms-1 report-dismiss"
+                                            data-user-id="{{ u.id }}">Dismiss</button>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-muted">&mdash;</span>
+                            {% endif %}
+                        </td>
+                    {% endif %}
                     <td class="text-end">
-                        <button type="button"
-                                class="btn btn-sm user-suspend-btn {% if u.is_active %}btn-outline-danger{% else %}btn-outline-success{% endif %}"
-                                data-user-id="{{ u.id }}">
-                            {% if u.is_active %}Suspend{% else %}Unsuspend{% endif %}
-                        </button>
+                        {% if is_manager %}
+                            <button type="button"
+                                    class="btn btn-sm user-suspend-btn {% if u.is_active %}btn-outline-danger{% else %}btn-outline-success{% endif %}"
+                                    data-user-id="{{ u.id }}">
+                                {% if u.is_active %}Suspend{% else %}Unsuspend{% endif %}
+                            </button>
+                        {% elif is_employee %}
+                            <button type="button" class="btn btn-sm btn-outline-warning user-report-btn"
+                                    data-user-id="{{ u.id }}" data-username="{{ u.username }}">
+                                <i class="fas fa-flag"></i> Report
+                            </button>
+                        {% endif %}
                     </td>
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="6" class="text-center text-muted py-4">No {{ user_category_label|lower }} found.</td>
+                    <td colspan="{% if user_category == 'customers' %}7{% else %}6{% endif %}"
+                        class="text-center text-muted py-4">No {{ user_category_label|lower }} found.</td>
                 </tr>
             {% endfor %}
         </tbody>

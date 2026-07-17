@@ -5,10 +5,12 @@
                 {% for col in columns %}<th>{{ col }}</th>{% endfor %}
                 <th class="text-nowrap text-end">
                     Action
-                    <button type="button" class="btn btn-sm btn-success inventory-add ms-1"
-                            data-category="{{ category }}" title="Add new" aria-label="Add new">
-                        <i class="fas fa-plus"></i>
-                    </button>
+                    {% if is_manager %}
+                        <button type="button" class="btn btn-sm btn-success inventory-add ms-1"
+                                data-category="{{ category }}" title="Add new" aria-label="Add new">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    {% endif %}
                 </th>
             </tr>
         </thead>
@@ -17,15 +19,22 @@
                 <tr data-code="{{ row.code }}">
                     {% for cell in row.cells %}<td>{{ cell }}</td>{% endfor %}
                     <td class="text-nowrap text-end">
-                        <button type="button" class="btn btn-sm btn-outline-secondary inventory-edit"
-                                data-code="{{ row.code }}" title="Edit" aria-label="Edit">
-                            <i class="fas fa-pen"></i>
-                        </button>
-                        <button type="button" class="btn btn-sm btn-outline-danger inventory-delete"
-                                data-code="{{ row.code }}" data-name="{{ row.cells.1 }} {{ row.cells.2 }}"
-                                title="Delete" aria-label="Delete">
-                            <i class="fas fa-xmark"></i>
-                        </button>
+                        {% if is_manager %}
+                            <button type="button" class="btn btn-sm btn-outline-secondary inventory-edit"
+                                    data-code="{{ row.code }}" title="Edit" aria-label="Edit">
+                                <i class="fas fa-pen"></i>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-danger inventory-delete"
+                                    data-code="{{ row.code }}" data-name="{{ row.cells.1 }} {{ row.cells.2 }}"
+                                    title="Delete" aria-label="Delete">
+                                <i class="fas fa-xmark"></i>
+                            </button>
+                        {% else %}
+                            <button type="button" class="btn btn-sm btn-outline-secondary inventory-stock"
+                                    data-code="{{ row.code }}" title="Edit stock" aria-label="Edit stock">
+                                <i class="fas fa-boxes-stacked"></i> Stock
+                            </button>
+                        {% endif %}
                     </td>
                 </tr>
             {% empty %}
