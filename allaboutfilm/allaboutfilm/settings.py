@@ -35,7 +35,12 @@ SECRET_KEY = os.environ.get(
 #     DJANGO_DEBUG=True python manage.py runserver
 DEBUG = os.environ.get('DJANGO_DEBUG', 'False').strip().lower() in ('true', '1', 'yes')
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '[::1]']
+# Hosts allowed to serve the site. Locally the defaults are enough; in
+# production set DJANGO_ALLOWED_HOSTS to a comma-separated list that includes the
+# deployed domain, e.g. "nckvmk.pythonanywhere.com".
+ALLOWED_HOSTS = os.environ.get(
+    'DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1,[::1]'
+).split(',')
 
 
 # Application definition
@@ -139,6 +144,11 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
+
+# `python manage.py collectstatic` gathers every static file (ours + Django
+# admin's) into this one folder, which the production web server points at.
+# Not used by the local dev server.
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Media files (user-uploaded content, e.g. product images)
 MEDIA_URL = '/media/'
