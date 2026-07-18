@@ -1,0 +1,25 @@
+# Database — the live copy lives on the server; don't let a pull overwrite it.
+*.sqlite3
+*.sqlite3-journal
+*.sqlite3-wal
+*.sqlite3-shm
+
+# collectstatic output (regenerated on the server with `collectstatic`)
+staticfiles/
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# IDE / editor
+.idea/
+.vscode/
+
+# OS junk
+.DS_Store
+Thumbs.db
