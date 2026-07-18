@@ -3,11 +3,18 @@ from django.contrib.auth.admin import UserAdmin
 
 from .models import (
     User, Product, Camera, Lens, Film, ProductImage,
-    Cart, CartItem, Order, OrderItem, ShippingMethod, WishlistItem,
+    Cart, CartItem, Order, OrderItem, ShippingMethod, WishlistItem, Feedback,
 )
 
 
 admin.site.register(WishlistItem)
+
+
+@admin.register(Feedback)
+class FeedbackAdmin(admin.ModelAdmin):
+    list_display = ('product', 'user', 'rating', 'hidden', 'flagged', 'created_at')
+    list_filter = ('rating', 'hidden', 'flagged')
+    search_fields = ('product__code', 'user__username', 'text')
 
 
 @admin.register(User)

@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 
 
@@ -285,6 +286,48 @@ class WishlistItem(models.Model):
 
     def __str__(self):
         return f"{self.product_id} in {self.user}'s wishlist"
+
+
+class Feedback(models.Model):
+    """A customer's star rating (and optional short text) for a Film product they
+    bought. A review can only be left once the order containing the item is
+    marked Completed. Reviews are moderated by staff: an employee can flag a
+    review for the manager's attention and/or hide it; the manager can hide it or
+    delete it outright."""
+
+    order = models.ForeignKey(
+        Order, on_delete=models.CASCADE, related_name='feedback'
+    )
+    product = models.ForeignKey(
+        Product, on_delete=models.CASCADE, related_name='feedback'
+    )
+    # Denormalised from order.user so the moderation panel and per-product
+    # queries don't have to hop through the order every time.
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='feedback'
+    )
+    rating = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(5)]
+    )
+    text = models.CharField(max_length=500, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    # Moderation
+    hidden = models.BooleanField(default=False)
+    flagged = models.BooleanField(default=False)
+    flagged_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='feedback_flagged'
+    )
+
+    class Meta:
+        ordering = ['-created_at']
+        # One review per product per order (an order's each film line is
+        # reviewed once).
+        unique_together = [['order', 'product']]
+
+    def __str__(self):
+        return f"{self.rating}★ by {self.user} on {self.product_id}"
 
 
 class CustomerReport(models.Model):

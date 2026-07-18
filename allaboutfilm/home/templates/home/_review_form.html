@@ -1,0 +1,67 @@
+{% load static_extras %}
+<div class="modal-header">
+    <h5 class="modal-title">Leave Feedback &mdash; Order #{{ order.pk }}</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+</div>
+
+{% if not completed %}
+    <div class="modal-body">
+        <div class="review-notice text-center py-3">
+            <i class="fas fa-hourglass-half review-notice-icon mb-2" aria-hidden="true"></i>
+            <p class="mb-1">This order is currently <strong>{{ order.get_status_display }}</strong>.</p>
+            <p class="text-muted mb-0">You can leave feedback once your order has been marked as <strong>Completed</strong>.</p>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+    </div>
+{% elif not has_film %}
+    <div class="modal-body">
+        <p class="text-muted mb-0 py-3 text-center">This order doesn't contain any film to review.</p>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+    </div>
+{% else %}
+    <form id="review-form" data-order-id="{{ order.pk }}" novalidate>
+        <input type="hidden" name="order_id" value="{{ order.pk }}">
+        <div class="modal-body">
+            {% for entry in film_items %}
+                <div class="review-item {% if not forloop.last %}border-bottom pb-3 mb-3{% endif %}" data-code="{{ entry.product.code }}">
+                    <div class="fw-bold mb-2">{{ entry.product.manufacturer }} {{ entry.product.model }}</div>
+                    {% if entry.review %}
+                        <div class="review-done small mb-1">
+                            <i class="fas fa-check-circle text-success" aria-hidden="true"></i>
+                            You reviewed this on {{ entry.review.created_at|date:"d M Y" }}
+                        </div>
+                        {% include "home/_stars.html" with rating=entry.review.rating %}
+                        {% if entry.review.text %}
+                            <p class="review-text mb-0 mt-2">{{ entry.review.text }}</p>
+                        {% endif %}
+                    {% else %}
+                        <div class="star-input" role="radiogroup" aria-label="Star rating for {{ entry.product.model }}">
+                            {% for n in "54321"|make_list %}
+                                <input type="radio" id="rating_{{ entry.product.code }}_{{ n }}"
+                                       name="rating_{{ entry.product.code }}" value="{{ n }}">
+                                <label for="rating_{{ entry.product.code }}_{{ n }}" title="{{ n }} stars">
+                                    <i class="fas fa-star" aria-hidden="true"></i>
+                                </label>
+                            {% endfor %}
+                        </div>
+                        <textarea class="form-control mt-2 review-textarea" name="text_{{ entry.product.code }}"
+                                  rows="2" maxlength="500"
+                                  placeholder="Write a short review (optional, 500 characters max)"></textarea>
+                        <div class="d-flex justify-content-between align-items-start gap-2 mt-1">
+                            <div class="review-error text-danger small" data-error-for="{{ entry.product.code }}"></div>
+                            <small class="text-muted review-charcount text-nowrap">0 / 500</small>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary">Submit Feedback</button>
+        </div>
+    </form>
+{% endif %}

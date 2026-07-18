@@ -6,7 +6,7 @@ from django.contrib.auth import authenticate, login, logout, get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import Group
 from django.db import transaction
-from django.db.models import ProtectedError, F, Count, Q
+from django.db.models import ProtectedError, F, Count, Q, Avg
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, JsonResponse
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -21,8 +21,15 @@ from .forms import (
 )
 from .models import (
     Product, Camera, Lens, Film, ShippingMethod, GearCondition,
-    Order, OrderItem, WishlistItem, ProductImage, CustomerReport,
+    Order, OrderItem, WishlistItem, ProductImage, CustomerReport, Feedback,
 )
+
+# Visible-review aggregates (hidden reviews don't count toward the public score).
+VISIBLE_FEEDBACK = Q(feedback__hidden=False)
+RATING_ANNOTATIONS = {
+    'avg_rating': Avg('feedback__rating', filter=VISIBLE_FEEDBACK),
+    'review_count': Count('feedback', filter=VISIBLE_FEEDBACK),
+}
 
 INVENTORY_FORMS = {'cameras': CameraForm, 'lenses': LensForm, 'film': FilmForm}
 
@@ -173,7 +180,7 @@ def film(request):
     ]
     return _render_catalog(
         request,
-        Film.objects.prefetch_related('images').all(),
+        Film.objects.prefetch_related('images').annotate(**RATING_ANNOTATIONS),
         'Film', 'No film available at the moment.',
         specs, FILM_PRICE_RANGES,
     )
@@ -187,12 +194,22 @@ def item_detail(request, code):
         item, back_url, category_label = product.lens, 'lenses', 'Lenses'
     else:
         item, back_url, category_label = product.film, 'film', 'Film'
-    return render(request, 'home/item_detail.html', {
+
+    context = {
         'item': item,
         'images': item.images.all(),
         'back_url': back_url,
         'category_label': category_label,
-    })
+    }
+    # Reviews only apply to film. Show the visible ones plus the average.
+    if product.category == Product.Category.FILM:
+        reviews = (Feedback.objects.filter(product=product, hidden=False)
+                   .select_related('user'))
+        stats = reviews.aggregate(avg=Avg('rating'), count=Count('id'))
+        context['reviews'] = reviews
+        context['avg_rating'] = stats['avg']
+        context['review_count'] = stats['count']
+    return render(request, 'home/item_detail.html', context)
 
 def about(request):
     return render(request, 'home/about.html')
@@ -329,6 +346,34 @@ def _orders_context():
     return {'all_orders': orders}
 
 
+def _customer_orders(user):
+    """The customer's orders with per-order review state attached, so the My
+    Orders panel can show 'Reviewed and Rated' vs 'Leave Feedback'. Reviews only
+    apply to film lines."""
+    orders = list(user.orders.prefetch_related('items__product', 'feedback'))
+    for order in orders:
+        film_items = [oi for oi in order.items.all()
+                      if oi.product.category == Product.Category.FILM]
+        reviewed = {f.product_id for f in order.feedback.all()}
+        order.has_film = bool(film_items)
+        order.all_reviewed = order.has_film and all(
+            oi.product.code in reviewed for oi in film_items
+        )
+    return orders
+
+
+def _feedback_context():
+    """Every review for the staff moderation panel — flagged ones first so the
+    manager sees what needs attention, then newest."""
+    feedback = (Feedback.objects
+                .select_related('user', 'product', 'flagged_by')
+                .order_by('-flagged', '-created_at'))
+    return {
+        'all_feedback': feedback,
+        'flagged_feedback_count': sum(1 for f in feedback if f.flagged),
+    }
+
+
 def _account_dashboard(request):
     """The logged-in account page. Everyone gets the Account Administration
     panel; customers also see wishlist/orders. Managers and employees share the
@@ -362,12 +407,13 @@ def _account_dashboard(request):
     }
     if is_customer:
         context['wishlist_items'] = WishlistItem.objects.filter(user=user).select_related('product').prefetch_related('product__images')
-        context['orders'] = user.orders.all()
+        context['orders'] = _customer_orders(user)
     if is_staff_member:
         context.update(_inventory_context('cameras'))
         # Managers moderate employees by default; employees only see customers.
         context.update(_users_context('employees' if is_manager else 'customers'))
         context.update(_orders_context())
+        context.update(_feedback_context())
     return render(request, 'home/account.html', context)
 
 
@@ -1165,3 +1211,151 @@ def order_delete(request):
             Product.objects.filter(pk=item.product_id).update(stock=F('stock') + item.quantity)
         order.delete()
     return JsonResponse({'ok': True, 'message': f'Order #{num} was deleted.'})
+
+
+# ---------------------------------------------------------------------------
+# Customer reviews (feedback on purchased film)
+# ---------------------------------------------------------------------------
+def _order_film_items(order):
+    """The film order-lines of an order, each paired with the customer's existing
+    review for it (or None). Only film is reviewable."""
+    reviews = {f.product_id: f for f in order.feedback.all()}
+    items = []
+    for oi in order.items.select_related('product'):
+        if oi.product.category == Product.Category.FILM:
+            items.append({'product': oi.product, 'review': reviews.get(oi.product.code)})
+    return items
+
+
+@login_required
+def review_form(request):
+    """Return the 'Leave Feedback' modal for one of the customer's own orders —
+    either the rating form (order Completed) or a 'not yet' notice."""
+    order = get_object_or_404(Order, pk=request.GET.get('order_id'), user=request.user)
+    film_items = _order_film_items(order)
+    return render(request, 'home/_review_form.html', {
+        'order': order,
+        'film_items': film_items,
+        'has_film': bool(film_items),
+        'completed': order.status == Order.Status.COMPLETED,
+    })
+
+
+@require_POST
+@login_required
+def review_submit(request):
+    order = get_object_or_404(Order, pk=request.POST.get('order_id'), user=request.user)
+    # Validation problems return HTTP 200 with ok=False (matching the rest of the
+    # app's AJAX endpoints) so the client's .done() handler can surface the
+    # message / field errors; jQuery routes non-2xx to .fail() instead.
+    if order.status != Order.Status.COMPLETED:
+        return JsonResponse(
+            {'ok': False, 'message': 'You can leave feedback once this order is Completed.'})
+
+    film_items = _order_film_items(order)
+    if not film_items:
+        return JsonResponse({'ok': False, 'message': 'This order has no film to review.'})
+
+    to_save = []   # (product, rating, text)
+    errors = {}    # {product_code: message}
+    any_input = False
+    for entry in film_items:
+        product = entry['product']
+        if entry['review'] is not None:
+            continue  # already reviewed — don't touch it
+        raw_rating = (request.POST.get(f'rating_{product.code}') or '').strip()
+        text = (request.POST.get(f'text_{product.code}') or '').strip()
+        if not raw_rating and not text:
+            continue  # left blank — skip
+        any_input = True
+        try:
+            rating = int(raw_rating)
+        except ValueError:
+            errors[product.code] = 'Please choose a star rating.'
+            continue
+        if not 1 <= rating <= 5:
+            errors[product.code] = 'Rating must be between 1 and 5 stars.'
+        elif len(text) > 500:
+            errors[product.code] = 'Reviews are limited to 500 characters.'
+        else:
+            to_save.append((product, rating, text))
+
+    if not any_input:
+        return JsonResponse({'ok': False, 'message': 'Please rate at least one item.'})
+    if errors:
+        return JsonResponse({'ok': False, 'errors': errors})
+
+    for product, rating, text in to_save:
+        Feedback.objects.update_or_create(
+            order=order, product=product,
+            defaults={'user': request.user, 'rating': rating, 'text': text},
+        )
+
+    reviewed = set(Feedback.objects.filter(order=order).values_list('product_id', flat=True))
+    all_reviewed = all(e['product'].code in reviewed for e in film_items)
+    return JsonResponse({
+        'ok': True,
+        'all_reviewed': all_reviewed,
+        'message': 'Thanks! Your feedback has been recorded.',
+    })
+
+
+# ---------------------------------------------------------------------------
+# Staff: review moderation (flag / hide / delete)
+# ---------------------------------------------------------------------------
+@login_required
+def manager_feedback(request):
+    """Return the feedback moderation table partial (AJAX refresh)."""
+    if not _is_staff_member(request.user):
+        return HttpResponse(status=403)
+    return render(request, 'home/_feedback_table.html',
+                  {**_feedback_context(), **_role_flags(request.user)})
+
+
+@require_POST
+@login_required
+def feedback_flag(request):
+    """Employee flags a review for the manager's attention."""
+    if not _is_staff_member(request.user):
+        return JsonResponse({'ok': False, 'message': 'Staff only.'}, status=403)
+    review = get_object_or_404(Feedback, pk=request.POST.get('feedback_id'))
+    review.flagged = True
+    review.flagged_by = request.user
+    review.save(update_fields=['flagged', 'flagged_by'])
+    return JsonResponse({'ok': True, 'message': 'Review flagged for the manager.'})
+
+
+@require_POST
+@login_required
+def feedback_hide(request):
+    """Employee or manager hides / unhides a review. A manager acting on it also
+    clears any pending flag (they've reviewed it); an employee hiding it leaves
+    the flag standing so the manager still gets notified."""
+    if not _is_staff_member(request.user):
+        return JsonResponse({'ok': False, 'message': 'Staff only.'}, status=403)
+    review = get_object_or_404(Feedback, pk=request.POST.get('feedback_id'))
+    review.hidden = not review.hidden
+    fields = ['hidden']
+    if _is_manager(request.user):
+        review.flagged = False
+        review.flagged_by = None
+        fields += ['flagged', 'flagged_by']
+    review.save(update_fields=fields)
+    return JsonResponse({
+        'ok': True,
+        'hidden': review.hidden,
+        'message': 'Review hidden.' if review.hidden else 'Review is visible again.',
+    })
+
+
+@require_POST
+@login_required
+def feedback_delete(request):
+    """Manager deletes a review outright."""
+    if not _is_manager(request.user):
+        return JsonResponse({'ok': False, 'message': 'Managers only.'}, status=403)
+    review = Feedback.objects.filter(pk=request.POST.get('feedback_id')).first()
+    if review is None:
+        return JsonResponse({'ok': False, 'message': 'Review not found.'}, status=404)
+    review.delete()
+    return JsonResponse({'ok': True, 'message': 'Review deleted.'})

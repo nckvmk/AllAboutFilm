@@ -86,6 +86,53 @@
                 <p class="item-description">{{ item.description|linebreaksbr }}</p>
             </div>
         </div>
+
+        {% if item.category == 'FILM' %}
+            <section class="reviews-section mt-5 pt-4 border-top">
+                <div class="reviews-header d-flex flex-wrap align-items-center gap-3 mb-4">
+                    <h3 class="mb-0">Customer Reviews</h3>
+                    {% if review_count %}
+                        <div class="reviews-average d-flex align-items-center gap-2">
+                            {% include "home/_stars.html" with rating=avg_rating %}
+                            <span class="reviews-average-value">{{ avg_rating|floatformat:1 }}</span>
+                            <span class="text-muted">/ 5 &middot; {{ review_count }} review{{ review_count|pluralize }}</span>
+                        </div>
+                    {% endif %}
+                </div>
+
+                {% if reviews %}
+                    <div class="row row-cols-1 row-cols-md-2 g-3">
+                        {% for review in reviews %}
+                            <div class="col">
+                                <div class="review-card h-100">
+                                    <div class="review-card-head d-flex align-items-center gap-2 mb-2">
+                                        <div class="review-avatar">
+                                            {% if review.user.avatar %}
+                                                <img src="{{ review.user.avatar.url }}" alt="{{ review.user.username }}">
+                                            {% else %}
+                                                <i class="fas fa-user-circle" aria-hidden="true"></i>
+                                            {% endif %}
+                                        </div>
+                                        <div class="flex-grow-1 min-w-0">
+                                            <div class="review-username fw-bold text-truncate">{{ review.user.username }}</div>
+                                            <div class="review-stars small">{% include "home/_stars.html" with rating=review.rating %}</div>
+                                        </div>
+                                        <div class="review-date text-muted small text-nowrap">{{ review.created_at|date:"d M Y" }}</div>
+                                    </div>
+                                    {% if review.text %}
+                                        <p class="review-text mb-0">{{ review.text }}</p>
+                                    {% else %}
+                                        <p class="review-text review-text--empty text-muted fst-italic mb-0">Rated without a written review.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted mb-0">No reviews yet. Feedback from customers who bought this film will appear here.</p>
+                {% endif %}
+            </section>
+        {% endif %}
     </div>
 {% endblock %}
 

@@ -37,6 +37,16 @@
             <p class="card-text">{{ item.description|truncatewords:15 }}
                 <a href="{% url 'item_detail' item.code %}">Read more</a>
             </p>
+            {% if item.category == 'FILM' %}
+                <div class="card-rating mb-2">
+                    {% if item.review_count %}
+                        {% include "home/_stars.html" with rating=item.avg_rating %}
+                        <span class="card-rating-count text-muted small">{{ item.avg_rating|floatformat:1 }} ({{ item.review_count }})</span>
+                    {% else %}
+                        <span class="card-rating-none text-muted small">No reviews yet</span>
+                    {% endif %}
+                </div>
+            {% endif %}
             <div class="mt-auto d-flex justify-content-between align-items-center">
                 <span class="price h5 mb-0">&euro;{{ item.price }}</span>
                 <div class="d-flex align-items-center gap-2">

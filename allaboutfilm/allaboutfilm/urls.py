@@ -59,6 +59,12 @@ urlpatterns = [
     path('manager/orders/form/', views.order_edit_form, name='order_edit_form'),
     path('manager/orders/save/', views.order_save, name='order_save'),
     path('manager/orders/delete/', views.order_delete, name='order_delete'),
+    path('review/form/', views.review_form, name='review_form'),
+    path('review/submit/', views.review_submit, name='review_submit'),
+    path('manager/feedback/', views.manager_feedback, name='manager_feedback'),
+    path('manager/feedback/flag/', views.feedback_flag, name='feedback_flag'),
+    path('manager/feedback/hide/', views.feedback_hide, name='feedback_hide'),
+    path('manager/feedback/delete/', views.feedback_delete, name='feedback_delete'),
 ]
 
 # Serve user-uploaded media (product photos, avatars) from the dev server. This

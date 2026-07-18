@@ -60,22 +60,43 @@
                     {% if orders %}
                         <div class="order-list">
                             {% for order in orders %}
-                                <a href="{% url 'order_confirmation' order.pk %}" class="order-row d-flex justify-content-between align-items-center py-3">
-                                    <div>
-                                        <div class="fw-bold">Order #{{ order.pk }}</div>
-                                        <div class="text-muted small">{{ order.date|date:"d M Y" }} &middot; {{ order.items.count }} item{{ order.items.count|pluralize }}</div>
+                                <div class="order-row d-flex flex-wrap justify-content-between align-items-center gap-3 py-3">
+                                    <a href="{% url 'order_confirmation' order.pk %}" class="order-row-main d-flex justify-content-between align-items-center flex-grow-1 gap-3">
+                                        <div>
+                                            <div class="fw-bold">Order #{{ order.pk }}</div>
+                                            <div class="text-muted small">{{ order.date|date:"d M Y" }} &middot; {{ order.items.count }} item{{ order.items.count|pluralize }}</div>
+                                        </div>
+                                        <div class="text-end">
+                                            <div class="fw-bold">&euro;{{ order.total|floatformat:2 }}</div>
+                                            <span class="order-status small">{{ order.get_status_display }}</span>
+                                        </div>
+                                    </a>
+                                    <div class="order-feedback">
+                                        {% if not order.has_film %}
+                                            <span class="text-muted small" title="Only film products can be reviewed">&mdash;</span>
+                                        {% elif order.all_reviewed %}
+                                            <span class="feedback-done small"><i class="fas fa-check-circle" aria-hidden="true"></i> Reviewed and Rated</span>
+                                        {% else %}
+                                            <button type="button" class="btn btn-sm btn-outline-primary feedback-open"
+                                                    data-order-id="{{ order.pk }}">
+                                                <i class="fas fa-star" aria-hidden="true"></i> Leave Feedback
+                                            </button>
+                                        {% endif %}
                                     </div>
-                                    <div class="text-end">
-                                        <div class="fw-bold">&euro;{{ order.total|floatformat:2 }}</div>
-                                        <span class="order-status small">{{ order.get_status_display }}</span>
-                                    </div>
-                                </a>
+                                </div>
                             {% endfor %}
                         </div>
                     {% else %}
                         <p class="text-muted mb-0">You haven't placed any orders yet.</p>
                     {% endif %}
                 </section>
+
+                <!-- Leave-feedback modal (filled via AJAX) -->
+                <div class="modal fade" id="feedback-modal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                        <div class="modal-content" id="feedback-modal-content"></div>
+                    </div>
+                </div>
             {% endif %}
 
             {% if is_staff_member %}
@@ -170,6 +191,24 @@
                         <div class="modal-content" id="order-modal-content"></div>
                     </div>
                 </div>
+
+                <!-- Feedback management -->
+                <section class="account-panel p-4 rounded mt-4">
+                    <h3 class="text-start">Feedback Management</h3>
+                    <hr>
+                    {% if is_manager and flagged_feedback_count %}
+                        <p class="feedback-flag-alert">
+                            <i class="fas fa-flag" aria-hidden="true"></i>
+                            {{ flagged_feedback_count }} review{{ flagged_feedback_count|pluralize }} flagged for your attention.
+                        </p>
+                    {% endif %}
+                    {% if is_employee %}
+                        <p class="text-muted small">Flag inappropriate reviews for a manager to review, or hide them from the storefront.</p>
+                    {% endif %}
+                    <div id="feedback-table-container">
+                        {% include "home/_feedback_table.html" %}
+                    </div>
+                </section>
             {% endif %}
 
             {% if not has_panel %}
@@ -197,4 +236,5 @@
     <script src="{% static_v 'js/toast.js' %}" defer></script>
     <script src="{% static_v 'js/wishlist.js' %}" defer></script>
     <script src="{% static_v 'js/manager.js' %}" defer></script>
+    <script src="{% static_v 'js/reviews.js' %}" defer></script>
 {% endblock %}

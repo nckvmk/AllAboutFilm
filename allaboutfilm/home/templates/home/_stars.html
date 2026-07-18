@@ -1,0 +1,9 @@
+{% load static_extras %}
+{# Renders a five-star row for `rating` (a number). Purely presentational. #}
+<span class="stars" role="img" aria-label="{{ rating|floatformat:1 }} out of 5 stars">
+    {% for state in rating|star_states %}
+        {% if state == 'full' %}<i class="fas fa-star"></i>
+        {% elif state == 'half' %}<i class="fas fa-star-half-stroke"></i>
+        {% else %}<i class="far fa-star"></i>{% endif %}
+    {% endfor %}
+</span>

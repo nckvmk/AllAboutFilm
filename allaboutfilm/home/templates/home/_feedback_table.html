@@ -1,0 +1,67 @@
+{% load static_extras %}
+<div class="table-responsive">
+    <table class="table feedback-table align-middle mb-0">
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Customer</th>
+                <th>Rating</th>
+                <th class="feedback-text-col">Review</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th class="text-end">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for f in all_feedback %}
+                <tr data-feedback-id="{{ f.id }}" class="{% if f.flagged %}feedback-flagged{% endif %}">
+                    <td class="feedback-product">
+                        <a href="{% url 'item_detail' f.product.code %}">{{ f.product.manufacturer }} {{ f.product.model }}</a>
+                        <div class="text-muted small">{{ f.product.code }}</div>
+                    </td>
+                    <td>{{ f.user.username }}</td>
+                    <td class="text-nowrap feedback-rating">{% include "home/_stars.html" with rating=f.rating %}</td>
+                    <td class="feedback-text-cell">
+                        {% if f.text %}{{ f.text }}{% else %}<span class="text-muted fst-italic">No written review.</span>{% endif %}
+                        {% if f.flagged %}
+                            <div class="feedback-flag-note small mt-1">
+                                <i class="fas fa-flag" aria-hidden="true"></i>
+                                Flagged{% if f.flagged_by %} by {{ f.flagged_by.username }}{% endif %} &mdash; needs manager review
+                            </div>
+                        {% endif %}
+                    </td>
+                    <td class="text-nowrap">{{ f.created_at|date:"d M Y" }}</td>
+                    <td class="feedback-status">
+                        {% if f.hidden %}
+                            <span class="status-suspended">Hidden</span>
+                        {% else %}
+                            <span class="status-active">Visible</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-nowrap text-end feedback-actions">
+                        {% if is_employee %}
+                            <button type="button" class="btn btn-sm btn-outline-warning feedback-flag {% if f.flagged %}d-none{% endif %}"
+                                    data-feedback-id="{{ f.id }}" title="Flag for manager">
+                                <i class="fas fa-flag" aria-hidden="true"></i> Flag
+                            </button>
+                        {% endif %}
+                        <button type="button" class="btn btn-sm btn-outline-secondary feedback-hide"
+                                data-feedback-id="{{ f.id }}">
+                            {% if f.hidden %}Unhide{% else %}Hide{% endif %}
+                        </button>
+                        {% if is_manager %}
+                            <button type="button" class="btn btn-sm btn-outline-danger feedback-delete"
+                                    data-feedback-id="{{ f.id }}" title="Delete review" aria-label="Delete review">
+                                <i class="fas fa-xmark" aria-hidden="true"></i>
+                            </button>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center text-muted py-4">No reviews have been left yet.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

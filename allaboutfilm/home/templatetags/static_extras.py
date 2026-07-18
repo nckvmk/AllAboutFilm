@@ -26,3 +26,24 @@ def static_v(path):
         except OSError:
             pass
     return url
+
+
+@register.filter
+def star_states(rating):
+    """Turn a numeric rating into a list of five states — 'full', 'half' or
+    'empty' — so a template can render a five-star row. Half is used when the
+    fractional part is 0.5 or more (e.g. 4.2 -> 4 full + 1 empty; 4.6 -> 4 full
+    + 1 half)."""
+    try:
+        value = float(rating or 0)
+    except (TypeError, ValueError):
+        value = 0.0
+    states = []
+    for position in range(1, 6):
+        if value >= position:
+            states.append('full')
+        elif value >= position - 0.5:
+            states.append('half')
+        else:
+            states.append('empty')
+    return states
