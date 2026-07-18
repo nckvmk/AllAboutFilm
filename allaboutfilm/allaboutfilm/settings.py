@@ -38,9 +38,23 @@ DEBUG = os.environ.get('DJANGO_DEBUG', 'False').strip().lower() in ('true', '1',
 # Hosts allowed to serve the site. Locally the defaults are enough; in
 # production set DJANGO_ALLOWED_HOSTS to a comma-separated list that includes the
 # deployed domain, e.g. "nckvmk.pythonanywhere.com".
-ALLOWED_HOSTS = os.environ.get(
+ALLOWED_HOSTS = [h.strip() for h in os.environ.get(
     'DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1,[::1]'
-).split(',')
+).split(',') if h.strip()]
+
+# PythonAnywhere (like most hosts) terminates HTTPS at a proxy and forwards the
+# request to Django over plain HTTP, with the real scheme in X-Forwarded-Proto.
+# Trust that header so request.is_secure() is correct.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# The browser sends "Origin: https://<domain>" on every POST. Without a matching
+# https:// entry here, Django rejects the request as a bad origin (403 CSRF) — so
+# login and all forms break on the live site. Derived from the deployed host(s);
+# empty locally (plain http, same-origin, so no check is needed).
+CSRF_TRUSTED_ORIGINS = [
+    f'https://{host}' for host in ALLOWED_HOSTS
+    if host not in ('localhost', '127.0.0.1', '[::1]')
+]
 
 
 # Application definition
