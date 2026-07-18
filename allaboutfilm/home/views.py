@@ -68,13 +68,24 @@ SORT_OPTIONS = [
     ('price_asc', 'Price: Ascending', 'price'),
     ('price_desc', 'Price: Descending', '-price'),
 ]
+
+# Film also carries an `avg_rating` annotation, so it can be sorted by rating.
+# Unrated films (avg_rating is NULL) always sort last, whichever direction.
+FILM_SORT_OPTIONS = SORT_OPTIONS + [
+    ('rating_desc', 'Rating: High to Low', F('avg_rating').desc(nulls_last=True)),
+    ('rating_asc', 'Rating: Low to High', F('avg_rating').asc(nulls_last=True)),
+]
 DEFAULT_SORT = 'none'
 
 
-def _render_catalog(request, queryset, page_title, empty_message, filter_specs, price_ranges):
+def _render_catalog(request, queryset, page_title, empty_message, filter_specs,
+                    price_ranges, sort_options=None):
     """Apply the dropdown filters from the query string to `queryset` and render
     the shared catalog template. `filter_specs` describes each exact-match
-    dropdown; price is handled separately via `price_ranges`."""
+    dropdown; price is handled separately via `price_ranges`. `sort_options`
+    defaults to the shared set; film passes an extended set that adds rating."""
+    if sort_options is None:
+        sort_options = SORT_OPTIONS
     filters = []
     for spec in filter_specs:
         allowed = {str(value) for value, _ in spec['options']}
@@ -105,13 +116,13 @@ def _render_catalog(request, queryset, page_title, empty_message, filter_specs, 
         'selected': price_selected,
     })
 
-    # Sorting (shared across all catalogs).
-    sort_lookup = {key: order_by for key, _, order_by in SORT_OPTIONS}
+    # Sorting (the option set is passed in — film adds rating).
+    sort_lookup = {key: order_by for key, _, order_by in sort_options}
     sort_selected = request.GET.get('sort', DEFAULT_SORT)
     if sort_selected not in sort_lookup:
         sort_selected = DEFAULT_SORT
     order_by = sort_lookup[sort_selected]
-    if order_by:
+    if order_by is not None:
         queryset = queryset.order_by(order_by)
 
     return render(request, 'home/catalog.html', {
@@ -120,7 +131,7 @@ def _render_catalog(request, queryset, page_title, empty_message, filter_specs, 
         'empty_message': empty_message,
         'filters': filters,
         'has_filters_applied': any(f['selected'] for f in filters),
-        'sort_options': [(key, label) for key, label, _ in SORT_OPTIONS],
+        'sort_options': [(key, label) for key, label, _ in sort_options],
         'sort_selected': sort_selected,
     })
 
@@ -182,7 +193,7 @@ def film(request):
         request,
         Film.objects.prefetch_related('images').annotate(**RATING_ANNOTATIONS),
         'Film', 'No film available at the moment.',
-        specs, FILM_PRICE_RANGES,
+        specs, FILM_PRICE_RANGES, sort_options=FILM_SORT_OPTIONS,
     )
 
 def item_detail(request, code):
@@ -510,6 +521,10 @@ def cart(request):
 
 @require_POST
 def add_to_cart(request):
+    # Staff (managers/employees) run the shop; they don't shop in it.
+    if request.user.is_authenticated and _is_staff_member(request.user):
+        return JsonResponse({'ok': False, 'message': 'Staff accounts cannot make purchases.'})
+
     code = request.POST.get('code')
     try:
         quantity = max(1, int(request.POST.get('quantity', 1)))
@@ -622,6 +637,11 @@ def _cart_items(request):
 
 @login_required
 def checkout(request):
+    # Staff accounts don't make purchases.
+    if _is_staff_member(request.user):
+        messages.error(request, 'Staff accounts cannot make purchases.')
+        return redirect('cart')
+
     items, subtotal = _cart_items(request)
     if not items:
         return redirect('cart')

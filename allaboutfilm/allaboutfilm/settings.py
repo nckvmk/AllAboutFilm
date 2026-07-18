@@ -86,6 +86,7 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'home.context_processors.cart_count',
                 'home.context_processors.wishlist_codes',
+                'home.context_processors.is_staff_member',
             ],
         },
     },

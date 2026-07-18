@@ -55,7 +55,9 @@
                             data-code="{{ item.code }}" aria-label="Toggle wishlist" title="Add to wishlist">
                         <i class="{% if item.code in wishlist_codes %}fas{% else %}far{% endif %} fa-heart"></i>
                     </button>
-                    {% if item.stock > 0 %}
+                    {% if is_staff_member %}
+                        {# Staff accounts can't purchase — no add-to-cart control. #}
+                    {% elif item.stock > 0 %}
                         <button class="btn btn-primary add-to-cart-btn"
                                 data-name="{{ item.manufacturer }} {{ item.model }}"
                                 data-code="{{ item.code }}">
